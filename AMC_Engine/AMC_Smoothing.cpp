@@ -27,27 +27,28 @@ AMCSmoothing_Parameters::AMCSmoothing_Parameters(
     adjustDeltaMax();
 }
 
-inline void AMCSmoothing_Parameters::adjustDeltaMax() {
+void AMCSmoothing_Parameters::adjustDeltaMax() {
     for (size_t i = 0; i < m_nUnderlyings; ++i) {
         m_adjustedDMax[i] = m_deltaMax[i] * m_FX[i];
     }
-};
+}
 
-inline size_t AMCSmoothing_Parameters::getUnderlyingsCount() const {
+size_t AMCSmoothing_Parameters::getUnderlyingsCount() const {
     return m_nUnderlyings;
-};
+}
 
 /* Utility functions for the call spread smoothing. */
-inline double AMCSmoothing_Parameters::callSpread(const double x) const {
+double AMCSmoothing_Parameters::callSpread(const double x) const {
     const double y = std::max(0.0, std::min(x, 1.0));
     return (y <= 0.5) ? 2.0 * y * y : (4.0 - 2.0 * y) * y - 1.0;
 }
 
-inline double AMCSmoothing_Parameters::callSpreadUnsmoothed(const double x) const {
+double AMCSmoothing_Parameters::callSpreadUnsmoothed(const double x) const {
     return x >= 0.0 ? 1.0 : 0.0;
 }
 
-inline double AMCSmoothing_Parameters::getIndividualSmoothing(const double regressedGain, const double* individualPerformances, const size_t i) const {
+double AMCSmoothing_Parameters::getIndividualSmoothing(const double regressedGain, const double* individualPerformances, const size_t i) const {
+    assert(individualPerformances);
     const double performance = m_perfGearing * (individualPerformances[i] - m_barrierLevel[i]);
     if (m_disableSmoothing || m_smoothingGearing <= 0.0) {
         return callSpreadUnsmoothed(performance);
@@ -62,11 +63,13 @@ inline double AMCSmoothing_Parameters::getIndividualSmoothing(const double regre
 }
 
 /* Computing the performance given the individual individualPerformances */
-inline double AMCSmoothing_Parameters_Mono::getPerformance(const double* individualPerformances) const {
+double AMCSmoothing_Parameters_Mono::getPerformance(const double* individualPerformances) const {
+    assert(individualPerformances); 
     return individualPerformances[0];
 }
 
-inline double AMCSmoothing_Parameters_WorstOf::getPerformance(const double* individualPerformances) const {
+double AMCSmoothing_Parameters_WorstOf::getPerformance(const double* individualPerformances) const {
+    assert(individualPerformances); 
     double performance = DBL_MAX;
     for (size_t i = 0; i < m_nUnderlyings; ++i) {
         performance = std::min(performance, individualPerformances[i]);
@@ -74,7 +77,8 @@ inline double AMCSmoothing_Parameters_WorstOf::getPerformance(const double* indi
     return performance;
 }
 
-inline double AMCSmoothing_Parameters_BestOf::getPerformance(const double* individualPerformances) const {
+double AMCSmoothing_Parameters_BestOf::getPerformance(const double* individualPerformances) const {
+    assert(individualPerformances);
     double performance = -DBL_MAX;
     for (size_t i = 0; i < m_nUnderlyings; ++i) {
         performance = std::max(performance, individualPerformances[i]);
@@ -83,19 +87,20 @@ inline double AMCSmoothing_Parameters_BestOf::getPerformance(const double* indiv
 }
 
 /* Computes the smoothing indicator */
-inline double AMCSmoothing_Parameters_Mono::getSmoothing(const double regressedGain, const double* individualPerformances) const {
+double AMCSmoothing_Parameters_Mono::getSmoothing(const double regressedGain, const double* individualPerformances) const {
+    assert(individualPerformances); 
     return getIndividualSmoothing(regressedGain, individualPerformances, 0);
 }
 
-inline bool AMCSmoothing_Parameters_WorstOf::takeMinimumOfSmoothings() const {
+bool AMCSmoothing_Parameters_WorstOf::takeMinimumOfSmoothings() const {
     return m_barrierType == BarrierType::UpBarrier;
 }
 
-inline bool AMCSmoothing_Parameters_BestOf::takeMinimumOfSmoothings() const {
+bool AMCSmoothing_Parameters_BestOf::takeMinimumOfSmoothings() const {
     return m_barrierType == BarrierType::DownBarrier;
 }
 
-inline double AMCSmoothing_Parameters_Multi::getSmoothing(const double regressedGain, const double* individualPerformances) const {
+double AMCSmoothing_Parameters_Multi::getSmoothing(const double regressedGain, const double* individualPerformances) const {
     for (size_t i = 0; i < m_nUnderlyings; ++i) {
         m_individualSmoothings[i] = getIndividualSmoothing(regressedGain, individualPerformances, i);
     }

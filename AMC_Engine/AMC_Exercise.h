@@ -1,4 +1,3 @@
-#pragma once
 #include "AMC_Smoothing.h"
 #include "AMC_Math.h"
 
@@ -10,7 +9,7 @@ public:
     virtual void computeWeights(
         std::vector<double>& weights,
         Matrix const& individualPerformances) const;
-    virtual inline void computeExercise(
+    virtual void computeExercise(
         std::vector<double>& exercise,
         std::vector<double> const& regressedGain,
         Matrix const& individualPerformances) const = 0;
@@ -23,40 +22,40 @@ class AMCExercise_Autocallable : protected AMCExercise {
     AMCSmoothing_ParametersConstPtr m_smoothingParams;
 public:
     AMCExercise_Autocallable(AMCSmoothing_Parameters const& smoothingParams);
-    inline void computeExercise(
+    void computeExercise(
         std::vector<double>& exercise,
         std::vector<double> const& regressedGain,
-        Matrix const& individualPerformances) const;
-    virtual void computeWeights(
+        Matrix const& individualPerformances) const override;
+    void computeWeights(
         std::vector<double>& weights,
-        Matrix const& individualPerformances) const;
+        Matrix const& individualPerformances) const override;
 };
 
 /* Putable Exercise */
 class AMCExercise_Putable : protected AMCExercise {
 public:
-    virtual bool isPutable() const;
-    inline void computeExercise(
+    bool isPutable() const override;
+    void computeExercise(
         std::vector<double>& exercise,
         std::vector<double> const& regressedGain,
-        Matrix const& individualPerformances) const;
+        Matrix const& individualPerformances) const override;
 };
 
 /* Callable Exercise */
 class AMCExercise_Callable : protected AMCExercise {
 public:
-    virtual bool isCallable() const;
-    inline void computeExercise(
+    bool isCallable() const override;
+    void computeExercise(
         std::vector<double>& exercise,
         std::vector<double> const& regressedGain,
-        Matrix const& individualPerformances) const;
+        Matrix const& individualPerformances) const override;
 };
 
 /* Null Exercise */
 class AMCExercise_NoExercise : protected AMCExercise {
 public:
-    inline void computeExercise(
+    void computeExercise(
         std::vector<double>& exercise,
         std::vector<double> const& regressedGain,
-        Matrix const& individualPerformances) const;
+        Matrix const& individualPerformances) const override;
 };

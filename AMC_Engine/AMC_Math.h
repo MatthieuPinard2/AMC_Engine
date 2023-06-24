@@ -8,7 +8,7 @@ private:
     size_t m_nRows;
     size_t m_nCols;
     double* m_data;
-    inline size_t memorySize() const noexcept;
+    size_t memorySize() const noexcept;
 public:
     Matrix() noexcept;
     Matrix(const size_t nRows, const size_t nCols);
@@ -16,12 +16,13 @@ public:
     Matrix(Matrix const& other);
     Matrix(Matrix&& other) noexcept;
     Matrix& operator=(const Matrix&) = delete;
-    inline size_t getNbCols() const noexcept;
-    inline size_t getNbRows() const noexcept;
-    inline double* data() noexcept;
-    inline const double* data() const noexcept;
-    inline double* operator[](const size_t i) noexcept;
-    inline const double* operator[](const size_t i) const noexcept;
+    Matrix& operator=(Matrix&&) = delete;
+    size_t getNbCols() const noexcept;
+    size_t getNbRows() const noexcept;
+    double* data() noexcept;
+    const double* data() const noexcept;
+    double* operator[](const size_t i) noexcept;
+    const double* operator[](const size_t i) const noexcept;
 };
 
 // Solves min_x((A*x - b)^0), stores the result in b.

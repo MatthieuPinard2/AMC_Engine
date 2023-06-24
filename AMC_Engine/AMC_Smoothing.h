@@ -1,4 +1,3 @@
-#pragma once
 #include <vector>
 #include <cassert>
 #include <memory>
@@ -22,10 +21,10 @@ protected:
     double m_perfGearing;
     BarrierType m_barrierType;
     bool m_disableSmoothing;             // If barrierDate <= modelDate, we don't smooth.
-    inline double callSpread(const double x) const;
-    inline double callSpreadUnsmoothed(const double x) const;
-    inline double getIndividualSmoothing(const double regressedGain, const double* performances, const size_t i) const;
-    inline void adjustDeltaMax();
+    double callSpread(const double x) const;
+    double callSpreadUnsmoothed(const double x) const;
+    double getIndividualSmoothing(const double regressedGain, const double* performances, const size_t i) const;
+    void adjustDeltaMax();
 public:
     virtual ~AMCSmoothing_Parameters() = default;
     AMCSmoothing_Parameters() = delete;
@@ -40,9 +39,9 @@ public:
         const BarrierType barrierType,
         const Time modelDate,
         const Time exerciseDate);
-    inline size_t getUnderlyingsCount() const;
-    inline virtual double getSmoothing(const double regressedGain, const double* performances) const = 0;
-    inline virtual double getPerformance(const double* performances) const = 0;
+    size_t getUnderlyingsCount() const;
+    virtual double getSmoothing(const double regressedGain, const double* performances) const = 0;
+    virtual double getPerformance(const double* performances) const = 0;
 };
 
 typedef std::shared_ptr<AMCSmoothing_Parameters> AMCSmoothing_ParametersPtr;
@@ -50,31 +49,31 @@ typedef std::shared_ptr<const AMCSmoothing_Parameters> AMCSmoothing_ParametersCo
 
 class AMCSmoothing_Parameters_Mono : protected AMCSmoothing_Parameters {
 public:
-    inline virtual double getPerformance(const double* performances) const;
-    inline double getSmoothing(const double regressedGain, const double* performances) const;
+    double getPerformance(const double* performances) const override;
+    double getSmoothing(const double regressedGain, const double* performances) const override;
     AMCSmoothing_Parameters_Mono() = delete;
 };
 
 class AMCSmoothing_Parameters_Multi : protected AMCSmoothing_Parameters {
 private:
-    inline virtual bool takeMinimumOfSmoothings() const = 0;
+    virtual bool takeMinimumOfSmoothings() const = 0;
 public:
-    inline double getSmoothing(const double regressedGain, const double* performances) const;
+    double getSmoothing(const double regressedGain, const double* performances) const override;
     AMCSmoothing_Parameters_Multi() = delete;
 };
 
 class AMCSmoothing_Parameters_WorstOf : protected AMCSmoothing_Parameters_Multi {
 private:
-    inline virtual bool takeMinimumOfSmoothings() const;
+    bool takeMinimumOfSmoothings() const override;
 public:
-    inline virtual double getPerformance(const double* performances) const;
+    double getPerformance(const double* performances) const override;
     AMCSmoothing_Parameters_WorstOf() = delete;
 };
 
 class AMCSmoothing_Parameters_BestOf : protected AMCSmoothing_Parameters_Multi {
 private:
-    inline virtual bool takeMinimumOfSmoothings() const;
+    bool takeMinimumOfSmoothings() const override;
 public:
-    inline virtual double getPerformance(const double* performances) const;
+    double getPerformance(const double* performances) const override;
     AMCSmoothing_Parameters_BestOf() = delete;
 };

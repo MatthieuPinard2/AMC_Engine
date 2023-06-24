@@ -21,7 +21,7 @@ void AMCExercise::computeWeights(
 AMCExercise_Autocallable::AMCExercise_Autocallable(AMCSmoothing_Parameters const& smoothingParams) :
     m_smoothingParams(&smoothingParams) {}
 
-inline void AMCExercise_Autocallable::computeExercise(
+void AMCExercise_Autocallable::computeExercise(
     std::vector<double>& exercise,
     std::vector<double> const& regressedGain,
     Matrix const& individualPerformances) const
@@ -41,7 +41,7 @@ void AMCExercise_Autocallable::computeWeights(
         weights[i] = m_smoothingParams->getPerformance(individualPerformances[i]);
     }
     standardDeviation(weights, meanPerf, stdPerf);
-    const double bandwidth = 1.06 * stdPerf * pow(double(nPaths), -0.2);
+    const double bandwidth = 1.06 * stdPerf * pow(static_cast<double>(nPaths), -0.2);
     for (size_t i = 0; i < nPaths; ++i) {
         weights[i] = (weights[i] / bandwidth);
         weights[i] = exp(-0.25 * weights[i] * weights[i]);
@@ -53,7 +53,7 @@ bool AMCExercise_Putable::isPutable() const {
     return true;
 }
 
-inline void AMCExercise_Putable::computeExercise(
+void AMCExercise_Putable::computeExercise(
     std::vector<double>& exercise,
     std::vector<double> const& regressedGain,
     Matrix const&) const
@@ -68,7 +68,7 @@ bool AMCExercise_Callable::isCallable() const {
     return true;
 }
 
-inline void AMCExercise_Callable::computeExercise(
+void AMCExercise_Callable::computeExercise(
     std::vector<double>& exercise,
     std::vector<double> const& regressedGain,
     Matrix const&) const
@@ -79,7 +79,7 @@ inline void AMCExercise_Callable::computeExercise(
 }
 
 /* Null Exercise */
-inline void AMCExercise_NoExercise::computeExercise(
+void AMCExercise_NoExercise::computeExercise(
     std::vector<double>& exercise,
     std::vector<double> const&,
     Matrix const&) const

@@ -1,4 +1,3 @@
-#pragma once
 #include <vector>
 
 using Time = int;
@@ -14,17 +13,29 @@ private:
     // Discount factor from today to the observation date
     std::vector<double> m_dfToObs;
     // Discount factor from the observation date to the settlement date
-    std::vector<double> m_dfObsToSettle; 
+    std::vector<double> m_dfObsToSettle;
+    // Decides whether the flow is paid if the exercise event is happening.
+    bool m_isIncludedInRebate;
+    // Such flows are paid regardless of an exercise event happening.
+    bool m_isBulletFlow;
 public:
-    inline size_t getExerciseIndex() const;
-    inline Time getObservationDate() const;
-    inline Time getSettlementDate() const;
-    inline double getDFToSettlementDate(const size_t i) const;
-    inline double getDFToObservationDate(const size_t i) const;
-    inline double getDFObsToSettleDate(const size_t i) const;
-    inline double getAmount(const size_t i) const;
-    inline void setAmount(const size_t i, const double amount);
-    inline double scaleAmount(const size_t i, const double scale);
-    inline void setDiscountFactors(const size_t i, const double dfToSettle, const double dfObsToSettle);
-    AMCFlow(const size_t nPaths, const size_t exerciseIndex, const Time observationDate, const Time settlementDate);
+    bool isIncludedInRebate() const;
+    bool isBulletFlow() const;
+    size_t getExerciseIndex() const;
+    Time getObservationDate() const;
+    Time getSettlementDate() const;
+    double getDFToSettlementDate(const size_t i) const;
+    double getDFToObservationDate(const size_t i) const;
+    double getDFObsToSettleDate(const size_t i) const;
+    double getAmount(const size_t i) const;
+    void setAmount(const size_t i, const double amount);
+    void scaleAmount(const size_t i, const double scale);
+    void setDiscountFactors(const size_t i, const double dfToSettle, const double dfObsToSettle);
+    AMCFlow(
+        const size_t nPaths,
+        const size_t exerciseIndex,
+        const Time observationDate,
+        const Time settlementDate,
+        const bool isIncludedInRebate,
+        const bool isBulletFlow);
 };

@@ -1,17 +1,17 @@
 #include "AMC_Math.h"
 
-inline size_t Matrix::memorySize() const noexcept {
+size_t Matrix::memorySize() const noexcept {
     return m_nRows * m_nCols * sizeof(double);
 }
 
 Matrix::Matrix() noexcept : m_nRows(0), m_nCols(0), m_data(nullptr) {}
 
 Matrix::Matrix(const size_t nRows, const size_t nCols) : m_nRows(nRows), m_nCols(nCols) {
-    m_data = (double*)_aligned_malloc(memorySize(), 64);
+    m_data = static_cast<double*>(_aligned_malloc(memorySize(), 64));
 }
 
 Matrix::Matrix(Matrix const& other) : Matrix(other.m_nRows, other.m_nCols) {
-    memcpy((void*)m_data, other.m_data, memorySize());
+    memcpy(m_data, other.m_data, memorySize());
 }
 
 Matrix::Matrix(Matrix&& other) noexcept {
@@ -24,42 +24,42 @@ Matrix::~Matrix() {
     _aligned_free(m_data);
 }
 
-inline size_t Matrix::getNbCols() const noexcept {
+size_t Matrix::getNbCols() const noexcept {
     return m_nCols;
 }
 
-inline size_t Matrix::getNbRows() const noexcept {
+size_t Matrix::getNbRows() const noexcept {
     return m_nRows;
 }
 
-inline double* Matrix::data() noexcept {
+double* Matrix::data() noexcept {
     return m_data;
 }
 
-inline const double* Matrix::data() const noexcept {
+const double* Matrix::data() const noexcept {
     return m_data;
 }
 
-inline double* Matrix::operator[](const size_t i) noexcept {
+double* Matrix::operator[](const size_t i) noexcept {
     return m_data + (m_nCols * i);
 }
 
-inline const double* Matrix::operator[](const size_t i) const noexcept {
+const double* Matrix::operator[](const size_t i) const noexcept {
     return m_data + (m_nCols * i);
 }
 
 // Solves min_x((A*x - b)^0), stores the result in b.
 void solveLinearRegression_SVD(Matrix const& A, std::vector<double>& b) {
     lapack_int rank = 0;
-    auto s = (double*)mkl_malloc(A.getNbRows() * sizeof(double), 64);
+    auto s = static_cast<double*>(mkl_malloc(A.getNbRows() * sizeof(double), 64));
     Matrix A_copy = A;
     LAPACKE_dgelsd(
         LAPACK_ROW_MAJOR,
-        (int)A.getNbRows(),
-        (int)A.getNbCols(),
+        static_cast<int>(A.getNbRows()),
+        static_cast<int>(A.getNbCols()),
         1,
         A_copy.data(),
-        (int)A.getNbCols(),
+        static_cast<int>(A.getNbCols()),
         b.data(),
         1,
         s,
@@ -74,11 +74,11 @@ void productMatrixVector(Matrix const& A, std::vector<double>& b) {
     cblas_dgemv(
         CblasRowMajor,
         CblasNoTrans,
-        (int)A.getNbRows(),
-        (int)A.getNbCols(),
+        static_cast<int>(A.getNbRows()),
+        static_cast<int>(A.getNbCols()),
         1.0,
         A.data(),
-        (int)A.getNbCols(),
+        static_cast<int>(A.getNbCols()),
         b.data(),
         1,
         0.0,
@@ -97,8 +97,8 @@ void standardDeviation(std::vector<double> const& X, double& mean, double& std) 
         mean += x;
         std += x * x;
     }
-    mean /= double(samples);
-    std /= double(samples);
+    mean /= static_cast<double>(samples);
+    std /= static_cast<double>(samples);
     std -= mean * mean;
     std = sqrt(std::max(0.0, std));
 }
@@ -120,8 +120,8 @@ void standardDeviation(Matrix const& X, std::vector<double>& mean, std::vector<d
         }
     }
     for (size_t j = 0; j < cols; ++j) {
-        mean[j] /= double(samples);
-        std[j] /= double(samples);
+        mean[j] /= static_cast<double>(samples);
+        std[j] /= static_cast<double>(samples);
         std[j] -= (mean[j] * mean[j]);
         std[j] = sqrt(std::max(0.0, std[j]));
     }

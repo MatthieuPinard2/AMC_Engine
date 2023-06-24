@@ -30,19 +30,25 @@
     <ClCompile Include="AMC_Smoothing.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="AMC_Math.h">
-      <Filter>Source Files</Filter>
+    <ClInclude Include="AMC_Exercise.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="AMC_Flow.h">
-      <Filter>Source Files</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="AMC_Exercise.h">
-      <Filter>Source Files</Filter>
+    <ClInclude Include="AMC_Math.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="AMC_Smoothing.h">
-      <Filter>Source Files</Filter>
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AMC_Engine.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
