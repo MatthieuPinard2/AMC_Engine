@@ -7,7 +7,7 @@ enum class UnderlyingType { WorstOf, BestOf, Mono };
 using Time = int;
 
 class AMCSmoothing_Parameters {
-private:
+protected:
     size_t m_nUnderlyings;
     std::vector<double> m_spreadMin;     // Floors the minimum smoothing width.
     std::vector<double> m_spreadMax;     // Caps the minimum smoothing width.
