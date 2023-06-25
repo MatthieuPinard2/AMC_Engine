@@ -103,7 +103,7 @@ void productMatrixVector(Matrix const& A, std::vector<double>& b) {
         1.0,
         A.data(),
         static_cast<int>(A.getNbCols()),
-        std::vector(b).data(),
+        std::vector<double>(b).data(),
         1,
         0.0,
         b.data(),
