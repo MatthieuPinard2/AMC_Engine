@@ -18,7 +18,7 @@ public:
 typedef std::shared_ptr<AMCExercise> AMCExercisePtr;
 
 /* Autocallable Exercise */
-class AMCExercise_Autocallable : protected AMCExercise {
+class AMCExercise_Autocallable : public AMCExercise {
     AMCSmoothing_ParametersConstPtr m_smoothingParams;
 public:
     AMCExercise_Autocallable(AMCSmoothing_Parameters const& smoothingParams);
@@ -32,7 +32,7 @@ public:
 };
 
 /* Putable Exercise */
-class AMCExercise_Putable : protected AMCExercise {
+class AMCExercise_Putable : public AMCExercise {
 public:
     bool isPutable() const override;
     void computeExercise(
@@ -42,7 +42,7 @@ public:
 };
 
 /* Callable Exercise */
-class AMCExercise_Callable : protected AMCExercise {
+class AMCExercise_Callable : public AMCExercise {
 public:
     bool isCallable() const override;
     void computeExercise(
@@ -52,7 +52,7 @@ public:
 };
 
 /* Null Exercise */
-class AMCExercise_NoExercise : protected AMCExercise {
+class AMCExercise_NoExercise : public AMCExercise {
 public:
     void computeExercise(
         std::vector<double>& exercise,

@@ -59,7 +59,7 @@ void AMCExercise_Putable::computeExercise(
     Matrix const&) const
 {
     for (size_t i = 0; i < exercise.size(); ++i) {
-        exercise[i] = regressedGain[i] <= 0.0 ? 1.0 : 0.0;
+        exercise[i] = regressedGain[i] < 0.0 ? 1.0 : 0.0;
     }
 }
 
@@ -74,7 +74,7 @@ void AMCExercise_Callable::computeExercise(
     Matrix const&) const
 {
     for (size_t i = 0; i < exercise.size(); ++i) {
-        exercise[i] = regressedGain[i] >= 0.0 ? 1.0 : 0.0;
+        exercise[i] = regressedGain[i] > 0.0 ? 1.0 : 0.0;
     }
 }
 

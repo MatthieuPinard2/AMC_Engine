@@ -50,6 +50,18 @@ bool AMCFlow::isBulletFlow() const {
     return m_isBulletFlow;
 }
 
+void AMCFlow::setExerciseIndex(const size_t exerciseIndex) {
+    m_exerciseIndex = exerciseIndex;
+}
+
+AMCFlow::AMCFlow() :
+    m_exerciseIndex(0),
+    m_observationDate(nullDate),
+    m_settlementDate(nullDate),
+    m_isIncludedInRebate(true),
+    m_isBulletFlow(false) {
+}
+
 AMCFlow::AMCFlow(
     const size_t nPaths,
     const size_t exerciseIndex,

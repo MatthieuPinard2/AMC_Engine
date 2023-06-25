@@ -1,6 +1,7 @@
 #include <vector>
 
 using Time = int;
+constexpr Time nullDate = Time{ 0 };
 
 class AMCFlow {
 private:
@@ -31,6 +32,8 @@ public:
     void setAmount(const size_t i, const double amount);
     void scaleAmount(const size_t i, const double scale);
     void setDiscountFactors(const size_t i, const double dfToSettle, const double dfObsToSettle);
+    void setExerciseIndex(const size_t exerciseIndex);
+    AMCFlow();
     AMCFlow(
         const size_t nPaths,
         const size_t exerciseIndex,

@@ -35,6 +35,7 @@ private:
     std::vector<Matrix> m_performances;
     // Private functions
     void rescaleStateVariable(Matrix& svMatrix) const;
+    size_t getBasisSize() const;
     void computeBasis(Matrix& svMatrix, Matrix& linearSVMatrix);
     void updateFutureFlows(const size_t exIdx);
     void rescaleByWeights(const size_t exIdx);
@@ -44,7 +45,7 @@ private:
     void computePremiumBeforeExercise(const size_t exIdx);
     void computePremiumAfterExercise(const size_t exIdx);
     void computeIndicators(const size_t exIdx);
-    size_t getFlowExerciseIndex(AMCFlow const& flow) const;
+    void setFlowExerciseIndex(AMCFlow& flow) const;
 public:
     AMCEngine(AMCEngine const&) = delete;
     AMCEngine(AMCEngine&&) = delete;

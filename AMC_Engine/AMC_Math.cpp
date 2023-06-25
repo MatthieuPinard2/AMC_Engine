@@ -20,6 +20,30 @@ Matrix::Matrix(Matrix&& other) noexcept {
     m_nCols = std::exchange(other.m_nCols, 0);
 }
 
+Matrix& Matrix::operator=(const Matrix& other) {
+    if (&other != this) {
+        const size_t thisSize = memorySize();
+        m_nRows = other.m_nRows;
+        m_nCols = other.m_nCols;
+        const size_t otherSize = memorySize();
+        if (otherSize > thisSize) {
+            m_data = static_cast<double*>(_aligned_realloc(m_data, otherSize, 64));
+        }
+        memcpy(m_data, other.m_data, otherSize);
+    }
+    return *this;
+}
+
+Matrix& Matrix::operator=(Matrix&& other) noexcept {
+    if (&other != this) {
+        _aligned_free(m_data);
+        m_data = std::exchange(other.m_data, nullptr);
+        m_nRows = std::exchange(other.m_nRows, 0);
+        m_nCols = std::exchange(other.m_nCols, 0);
+    }
+    return *this;
+}
+
 Matrix::~Matrix() {
     _aligned_free(m_data);
 }
@@ -79,7 +103,7 @@ void productMatrixVector(Matrix const& A, std::vector<double>& b) {
         1.0,
         A.data(),
         static_cast<int>(A.getNbCols()),
-        b.data(),
+        std::vector(b).data(),
         1,
         0.0,
         b.data(),

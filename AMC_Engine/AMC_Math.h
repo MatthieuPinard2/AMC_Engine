@@ -15,8 +15,8 @@ public:
     ~Matrix();
     Matrix(Matrix const& other);
     Matrix(Matrix&& other) noexcept;
-    Matrix& operator=(const Matrix&) = delete;
-    Matrix& operator=(Matrix&&) = delete;
+    Matrix& operator=(const Matrix&);
+    Matrix& operator=(Matrix&&) noexcept;
     size_t getNbCols() const noexcept;
     size_t getNbRows() const noexcept;
     double* data() noexcept;

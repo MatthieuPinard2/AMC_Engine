@@ -7,7 +7,7 @@ enum class UnderlyingType { WorstOf, BestOf, Mono };
 using Time = int;
 
 class AMCSmoothing_Parameters {
-protected:
+private:
     size_t m_nUnderlyings;
     std::vector<double> m_spreadMin;     // Floors the minimum smoothing width.
     std::vector<double> m_spreadMax;     // Caps the minimum smoothing width.
@@ -47,14 +47,14 @@ public:
 typedef std::shared_ptr<AMCSmoothing_Parameters> AMCSmoothing_ParametersPtr;
 typedef std::shared_ptr<const AMCSmoothing_Parameters> AMCSmoothing_ParametersConstPtr;
 
-class AMCSmoothing_Parameters_Mono : protected AMCSmoothing_Parameters {
+class AMCSmoothing_Parameters_Mono : public AMCSmoothing_Parameters {
 public:
     double getPerformance(const double* performances) const override;
     double getSmoothing(const double regressedGain, const double* performances) const override;
     AMCSmoothing_Parameters_Mono() = delete;
 };
 
-class AMCSmoothing_Parameters_Multi : protected AMCSmoothing_Parameters {
+class AMCSmoothing_Parameters_Multi : public AMCSmoothing_Parameters {
 private:
     virtual bool takeMinimumOfSmoothings() const = 0;
 public:
@@ -62,7 +62,7 @@ public:
     AMCSmoothing_Parameters_Multi() = delete;
 };
 
-class AMCSmoothing_Parameters_WorstOf : protected AMCSmoothing_Parameters_Multi {
+class AMCSmoothing_Parameters_WorstOf : public AMCSmoothing_Parameters_Multi {
 private:
     bool takeMinimumOfSmoothings() const override;
 public:
@@ -70,7 +70,7 @@ public:
     AMCSmoothing_Parameters_WorstOf() = delete;
 };
 
-class AMCSmoothing_Parameters_BestOf : protected AMCSmoothing_Parameters_Multi {
+class AMCSmoothing_Parameters_BestOf : public AMCSmoothing_Parameters_Multi {
 private:
     bool takeMinimumOfSmoothings() const override;
 public:
