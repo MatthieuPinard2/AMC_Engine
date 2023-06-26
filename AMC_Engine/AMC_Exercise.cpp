@@ -31,10 +31,7 @@ void AMCExercise_Autocallable::computeExercise(
     std::vector<double> const& regressedGain,
     Matrix const& individualPerformances) const
 {
-    const size_t nPaths = exercise.size();
-    for (size_t i = 0; i < nPaths; ++i) {
-        exercise[i] = m_smoothingParams->getSmoothing(regressedGain[i], individualPerformances[i]);
-    }
+    m_smoothingParams->getSmoothing(regressedGain, individualPerformances, exercise);
 }
 
 void AMCExercise_Autocallable::computeWeights(
@@ -43,9 +40,7 @@ void AMCExercise_Autocallable::computeWeights(
 {
     const size_t nPaths = weights.size();
     double meanPerf = 0.0, stdPerf = 0.0;
-    for (size_t i = 0; i < nPaths; ++i) {
-        weights[i] = m_smoothingParams->getPerformance(individualPerformances[i]);
-    }
+    m_smoothingParams->getPerformance(individualPerformances, weights);
     standardDeviation(weights, meanPerf, stdPerf);
     const double bandwidth = 1.06 * stdPerf * pow(static_cast<double>(nPaths), -0.2);
     for (size_t i = 0; i < nPaths; ++i) {

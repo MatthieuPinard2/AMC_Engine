@@ -6,6 +6,13 @@ void AMCEngine::rescaleStateVariable(Matrix& svMatrix) const {
         return;
     std::vector<double> meanSV(nStateVariables), stdSV(nStateVariables);
     standardDeviation(svMatrix, meanSV, stdSV);
+    // State Variables with 0 variance will be replaced by ones.
+    for (size_t j = 0; j < nStateVariables; ++j) {
+        if (stdSV[j] <= 0.0) {
+            meanSV[j] -= 1.0;
+            stdSV[j] = 1.0;
+        }
+    }
     for (size_t i = 0; i < m_nPaths; ++i) {
         auto svRow = svMatrix[i];
         for (size_t j = 0; j < nStateVariables; ++j) {
@@ -223,14 +230,14 @@ void AMCEngine::setFlowExerciseIndex(AMCFlow& flow) const {
     }
     else {
         // We are allocating each flow so that exIdx(flow) = i <=> exDate[i - 1] < obs(flow) <= exDate[i]
-        const size_t exIdx = std::distance(
+        const size_t exIdx = static_cast<size_t>(std::distance(
             m_exerciseFlows.cbegin(),
             std::lower_bound(
                 m_exerciseFlows.cbegin(), m_exerciseFlows.cend(), flow,
                 [](AMCFlow const& a, AMCFlow const& b) {
                     return a.getObservationDate() < b.getObservationDate();
                 }
-        ));
+        )));
         // If the flow is not included in the rebate, yet has the same observation date as the exercise, we allocate it
         // to the next exercise period, so it is effectively paid if we did not exercise (and not paid if we exercise).
         if (exIdx < m_nExercises && !flow.isIncludedInRebate() && flow.getObservationDate() == m_exerciseFlows[exIdx].getObservationDate())
