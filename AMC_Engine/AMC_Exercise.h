@@ -6,6 +6,7 @@ public:
     virtual ~AMCExercise() = default;
     virtual bool isCallable() const;
     virtual bool isPutable() const;
+    virtual bool isNoExercise() const;
     virtual void computeWeights(
         std::vector<double>& weights,
         Matrix const& individualPerformances) const;
@@ -54,6 +55,7 @@ public:
 /* Null Exercise */
 class AMCExercise_NoExercise : public AMCExercise {
 public:
+    bool isNoExercise() const override;
     void computeExercise(
         std::vector<double>& exercise,
         std::vector<double> const& regressedGain,

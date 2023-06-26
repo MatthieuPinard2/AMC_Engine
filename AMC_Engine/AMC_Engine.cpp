@@ -106,7 +106,7 @@ void AMCEngine::rescaleByWeights(const size_t exIdx) {
 
 bool AMCEngine::needRegression(const size_t exIdx) {
     // We are not computing a regression for AMCExercise_NoExercise.
-    if (dynamic_cast<AMCExercise_NoExercise*>(m_exercises[exIdx].get()))
+    if (m_exercises[exIdx]->isNoExercise())
         return false;
     const Time exDate = m_exerciseFlows[exIdx].getObservationDate();
     // We are checking whether there are (future) contract flows are known strictly after the exercise *observation* date.
@@ -117,11 +117,9 @@ bool AMCEngine::needRegression(const size_t exIdx) {
     }
     // We are doing the same for the (future) exercises. Note we also discard AMCExercise_NoExercise.
     for (size_t nextEx = exIdx + 1; nextEx < m_nExercises; ++nextEx) {
-        if (!dynamic_cast<AMCExercise_NoExercise*>(m_exercises[nextEx].get())) {
-            if (m_exerciseFlows[nextEx].getObservationDate() > exDate)
+        if (!m_exercises[exIdx]->isNoExercise() && m_exerciseFlows[nextEx].getObservationDate() > exDate)
                 return true;
         }
-    }
     // All flows are known at the exercise date, we do not regress.
     return false;
 }

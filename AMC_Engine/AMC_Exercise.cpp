@@ -8,6 +8,10 @@ bool AMCExercise::isPutable() const {
     return false;
 }
 
+bool AMCExercise::isNoExercise() const {
+    return false;
+}
+
 void AMCExercise::computeWeights(
     std::vector<double>& weights,
     Matrix const&) const
@@ -92,4 +96,8 @@ void AMCExercise_NoExercise::computeExercise(
     for (size_t i = 0; i < nPaths; ++i) {
         exercise[i] = 0.0;
     }
+}
+
+bool AMCExercise_NoExercise::isNoExercise() const {
+    return true;
 }
