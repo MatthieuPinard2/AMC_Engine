@@ -222,22 +222,22 @@ void AMCEngine::setFlowExerciseIndex(AMCFlow& flow) const {
         flow.setExerciseIndex(m_nExercises + 1);
     }
     else {
-    // We are allocating each flow so that exIdx(flow) = i <=> exDate[i - 1] < obs(flow) <= exDate[i]
+        // We are allocating each flow so that exIdx(flow) = i <=> exDate[i - 1] < obs(flow) <= exDate[i]
         const size_t exIdx = std::distance(
             m_exerciseFlows.cbegin(),
             std::lower_bound(
                 m_exerciseFlows.cbegin(), m_exerciseFlows.cend(), flow,
                 [](AMCFlow const& a, AMCFlow const& b) {
-        return a.getObservationDate() < b.getObservationDate();
+                    return a.getObservationDate() < b.getObservationDate();
                 }
-            ));
-    // If the flow is not included in the rebate, yet has the same observation date as the exercise, we allocate it
-    // to the next exercise period, so it is effectively paid if we did not exercise (and not paid if we exercise).
-    if (exIdx < m_nExercises && !flow.isIncludedInRebate() && flow.getObservationDate() == m_exerciseFlows[exIdx].getObservationDate())
+        ));
+        // If the flow is not included in the rebate, yet has the same observation date as the exercise, we allocate it
+        // to the next exercise period, so it is effectively paid if we did not exercise (and not paid if we exercise).
+        if (exIdx < m_nExercises && !flow.isIncludedInRebate() && flow.getObservationDate() == m_exerciseFlows[exIdx].getObservationDate())
             flow.setExerciseIndex(exIdx + 1);
         else
             flow.setExerciseIndex(exIdx);
-}
+    }
 }
 
 AMCEngine::AMCEngine() {
