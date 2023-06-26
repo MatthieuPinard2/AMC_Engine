@@ -12,7 +12,8 @@ void AMCExercise::computeWeights(
     std::vector<double>& weights,
     Matrix const&) const
 {
-    for (size_t i = 0; i < weights.size(); ++i) {
+    const size_t nPaths = weights.size();
+    for (size_t i = 0; i < nPaths; ++i) {
         weights[i] = 1.0;
     }
 }
@@ -26,7 +27,8 @@ void AMCExercise_Autocallable::computeExercise(
     std::vector<double> const& regressedGain,
     Matrix const& individualPerformances) const
 {
-    for (size_t i = 0; i < exercise.size(); ++i) {
+    const size_t nPaths = exercise.size();
+    for (size_t i = 0; i < nPaths; ++i) {
         exercise[i] = m_smoothingParams->getSmoothing(regressedGain[i], individualPerformances[i]);
     }
 }
@@ -58,7 +60,8 @@ void AMCExercise_Putable::computeExercise(
     std::vector<double> const& regressedGain,
     Matrix const&) const
 {
-    for (size_t i = 0; i < exercise.size(); ++i) {
+    const size_t nPaths = exercise.size();
+    for (size_t i = 0; i < nPaths; ++i) {
         exercise[i] = regressedGain[i] < 0.0 ? 1.0 : 0.0;
     }
 }
@@ -73,7 +76,8 @@ void AMCExercise_Callable::computeExercise(
     std::vector<double> const& regressedGain,
     Matrix const&) const
 {
-    for (size_t i = 0; i < exercise.size(); ++i) {
+    const size_t nPaths = exercise.size();
+    for (size_t i = 0; i < nPaths; ++i) {
         exercise[i] = regressedGain[i] > 0.0 ? 1.0 : 0.0;
     }
 }
@@ -84,7 +88,8 @@ void AMCExercise_NoExercise::computeExercise(
     std::vector<double> const&,
     Matrix const&) const
 {
-    for (size_t i = 0; i < exercise.size(); ++i) {
+    const size_t nPaths = exercise.size();
+    for (size_t i = 0; i < nPaths; ++i) {
         exercise[i] = 0.0;
     }
 }

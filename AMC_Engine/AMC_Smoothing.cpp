@@ -50,7 +50,7 @@ double AMCSmoothing_Parameters::callSpreadUnsmoothed(const double x) const {
 double AMCSmoothing_Parameters::getIndividualSmoothing(const double regressedGain, const double* individualPerformances, const size_t i) const {
     assert(individualPerformances);
     const double performance = m_perfGearing * (individualPerformances[i] - m_barrierLevel[i]);
-    if (m_disableSmoothing || m_smoothingGearing <= 0.0) {
+    if (m_disableSmoothing || m_smoothingGearing <= 0.0) [[unlikely]] {
         return callSpreadUnsmoothed(performance);
     }
     else {
@@ -105,7 +105,7 @@ double AMCSmoothing_Parameters_Multi::getSmoothing(const double regressedGain, c
         m_individualSmoothings[i] = getIndividualSmoothing(regressedGain, individualPerformances, i);
     }
     double smoothing = 1.0;
-    if (takeMinimumOfSmoothings()) {
+    if (takeMinimumOfSmoothings()) [[likely]] {
         for (size_t i = 0; i < m_nUnderlyings; ++i) {
             smoothing *= m_individualSmoothings[i];
         }

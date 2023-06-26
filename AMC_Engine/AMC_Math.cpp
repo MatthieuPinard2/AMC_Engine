@@ -23,13 +23,13 @@ Matrix::Matrix(Matrix&& other) noexcept {
 Matrix& Matrix::operator=(const Matrix& other) {
     if (&other != this) {
         const size_t thisSize = memorySize();
-        m_nRows = other.m_nRows;
-        m_nCols = other.m_nCols;
-        const size_t otherSize = memorySize();
+        const size_t otherSize = other.memorySize();
         if (otherSize > thisSize) {
             m_data = static_cast<double*>(_aligned_realloc(m_data, otherSize, 64));
         }
         memcpy(m_data, other.m_data, otherSize);
+        m_nRows = other.m_nRows;
+        m_nCols = other.m_nCols;
     }
     return *this;
 }
