@@ -28,15 +28,18 @@ private:
     std::vector<double> m_premiumAfter;
     std::vector<double> m_exerciseDecision;
     std::vector<double> m_weights;
-    Matrix m_basis;
-    Matrix m_basisWeighted;
-    std::vector<Matrix> m_stateVariables;
-    std::vector<Matrix> m_linearStateVariables;
-    std::vector<Matrix> m_performances;
+    Matrix<double> m_basis;
+    Matrix<double> m_basisWeighted;
+    std::vector<Matrix<double>> m_stateVariables;
+    std::vector<Matrix<double>> m_linearStateVariables;
+    std::vector<Matrix<double>> m_performances;
+    Matrix<size_t> m_monomialExponents;
+    size_t m_nStateVariables;
+    size_t m_nLinearStateVariables;
     // Private functions
-    void rescaleStateVariable(Matrix& svMatrix) const;
-    size_t getBasisSize() const;
-    void computeBasis(Matrix& svMatrix, Matrix& linearSVMatrix);
+    void rescaleStateVariable(Matrix<double>& svMatrix) const;
+    size_t getBasisSize(const bool withLinearSV) const;
+    void computeBasis(Matrix<double>& svMatrix, Matrix<double>& linearSVMatrix);
     void updateFutureFlows(const size_t exIdx);
     void rescaleByWeights(const size_t exIdx);
     bool needRegression(const size_t exIdx);
@@ -46,6 +49,7 @@ private:
     void computePremiumAfterExercise(const size_t exIdx);
     void computeIndicators(const size_t exIdx);
     void setFlowExerciseIndex(AMCFlow& flow) const;
+    void precomputeMonomialExponents();
 public:
     AMCEngine(AMCEngine const&) = delete;
     AMCEngine(AMCEngine&&) = delete;

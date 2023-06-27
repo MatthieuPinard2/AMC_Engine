@@ -9,11 +9,11 @@ public:
     virtual bool isNoExercise() const;
     virtual void computeWeights(
         std::vector<double>& weights,
-        Matrix const& individualPerformances) const;
+        Matrix<double> const& individualPerformances) const;
     virtual void computeExercise(
         std::vector<double>& exercise,
         std::vector<double> const& regressedGain,
-        Matrix const& individualPerformances) const = 0;
+        Matrix<double> const& individualPerformances) const = 0;
 };
 
 typedef std::shared_ptr<AMCExercise> AMCExercisePtr;
@@ -26,10 +26,10 @@ public:
     void computeExercise(
         std::vector<double>& exercise,
         std::vector<double> const& regressedGain,
-        Matrix const& individualPerformances) const override;
+        Matrix<double> const& individualPerformances) const override;
     void computeWeights(
         std::vector<double>& weights,
-        Matrix const& individualPerformances) const override;
+        Matrix<double> const& individualPerformances) const override;
 };
 
 /* Putable Exercise */
@@ -39,7 +39,7 @@ public:
     void computeExercise(
         std::vector<double>& exercise,
         std::vector<double> const& regressedGain,
-        Matrix const& individualPerformances) const override;
+        Matrix<double> const& individualPerformances) const override;
 };
 
 /* Callable Exercise */
@@ -49,7 +49,7 @@ public:
     void computeExercise(
         std::vector<double>& exercise,
         std::vector<double> const& regressedGain,
-        Matrix const& individualPerformances) const override;
+        Matrix<double> const& individualPerformances) const override;
 };
 
 /* Null Exercise */
@@ -59,5 +59,5 @@ public:
     void computeExercise(
         std::vector<double>& exercise,
         std::vector<double> const& regressedGain,
-        Matrix const& individualPerformances) const override;
+        Matrix<double> const& individualPerformances) const override;
 };

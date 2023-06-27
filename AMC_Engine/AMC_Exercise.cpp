@@ -14,7 +14,7 @@ bool AMCExercise::isNoExercise() const {
 
 void AMCExercise::computeWeights(
     std::vector<double>& weights,
-    Matrix const&) const
+    Matrix<double> const&) const
 {
     const size_t nPaths = weights.size();
     for (size_t i = 0; i < nPaths; ++i) {
@@ -29,14 +29,14 @@ AMCExercise_Autocallable::AMCExercise_Autocallable(AMCSmoothing_Parameters const
 void AMCExercise_Autocallable::computeExercise(
     std::vector<double>& exercise,
     std::vector<double> const& regressedGain,
-    Matrix const& individualPerformances) const
+    Matrix<double> const& individualPerformances) const
 {
     m_smoothingParams->getSmoothing(regressedGain, individualPerformances, exercise);
 }
 
 void AMCExercise_Autocallable::computeWeights(
     std::vector<double>& weights,
-    Matrix const& individualPerformances) const
+    Matrix<double> const& individualPerformances) const
 {
     const size_t nPaths = weights.size();
     double meanPerf = 0.0, stdPerf = 0.0;
@@ -57,7 +57,7 @@ bool AMCExercise_Putable::isPutable() const {
 void AMCExercise_Putable::computeExercise(
     std::vector<double>& exercise,
     std::vector<double> const& regressedGain,
-    Matrix const&) const
+    Matrix<double> const&) const
 {
     const size_t nPaths = exercise.size();
     for (size_t i = 0; i < nPaths; ++i) {
@@ -73,7 +73,7 @@ bool AMCExercise_Callable::isCallable() const {
 void AMCExercise_Callable::computeExercise(
     std::vector<double>& exercise,
     std::vector<double> const& regressedGain,
-    Matrix const&) const
+    Matrix<double> const&) const
 {
     const size_t nPaths = exercise.size();
     for (size_t i = 0; i < nPaths; ++i) {
@@ -85,7 +85,7 @@ void AMCExercise_Callable::computeExercise(
 void AMCExercise_NoExercise::computeExercise(
     std::vector<double>& exercise,
     std::vector<double> const&,
-    Matrix const&) const
+    Matrix<double> const&) const
 {
     const size_t nPaths = exercise.size();
     for (size_t i = 0; i < nPaths; ++i) {

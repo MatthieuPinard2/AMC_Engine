@@ -1,18 +1,64 @@
 #include "AMC_Engine.h"
 
-void AMCEngine::rescaleStateVariable(Matrix& svMatrix) const {
+void AMCEngine::precomputeMonomialExponents() {
+    // Do not enter this costly function if we are dealing with a trivial basis.
+    if (!m_useCrossTerms || m_nStateVariables <= 1)
+        return;
+    // The exponents already have been computed, we can return.
+    if (m_monomialExponents.getNbCols() == m_nStateVariables)
+        return;
+    m_monomialExponents = Matrix<size_t>(getBasisSize(false), m_nStateVariables);
+    size_t insertIdx = 0;
+    if (m_nStateVariables == 2) {
+        for (size_t i = 0; i <= m_polynomialDegree; ++i, ++insertIdx) {
+            for (size_t j = 0; j <= i; ++j) {
+                auto row = m_monomialExponents[insertIdx];
+                row[0] = j; row[1] = i - j;
+            }
+        }
+    }
+    else if (m_nStateVariables == 3) {
+        for (size_t i = 0; i <= m_polynomialDegree; ++i) {
+            for (size_t j = 0; j <= i; ++j) {
+                for (size_t k = 0; k <= i - j; ++k, ++insertIdx) {
+                    auto row = m_monomialExponents[insertIdx];
+                    row[0] = j; row[1] = k; row[2] = i - j - k;
+                }
+            }
+        }
+    }
+    else if (m_nStateVariables == 4) {
+        for (size_t i = 0; i <= m_polynomialDegree; ++i) {
+            for (size_t j = 0; j <= i; ++j) {
+                for (size_t k = 0; k <= i - j; ++k) {
+                    for (size_t l = 0; l <= i - j - k; ++l, ++insertIdx) {
+                        auto row = m_monomialExponents[insertIdx];
+                        row[0] = j; row[1] = k; row[2] = l; row[3] = i - j - k - l;
+                    }
+                }
+            }
+        }
+    }
+    else {
+        // The basis would be huge. We don't compute it for performance reasons, and because the 
+        // SVD regression would be of very low quality.
+    }
+}
+
+void AMCEngine::rescaleStateVariable(Matrix<double>& svMatrix) const {
     const size_t nStateVariables = svMatrix.getNbCols();
     if (!nStateVariables)
         return;
     std::vector<double> meanSV(nStateVariables), stdSV(nStateVariables);
     standardDeviation(svMatrix, meanSV, stdSV);
-    // State Variables with 0 variance will be replaced by ones.
+    // State Variables with 0 variance will be replaced by ones. (so it is rank one)
     for (size_t j = 0; j < nStateVariables; ++j) {
         if (stdSV[j] <= 0.0) {
             meanSV[j] -= 1.0;
             stdSV[j] = 1.0;
         }
     }
+    // Other State Variables will have mean 0 and variance 1.
     for (size_t i = 0; i < m_nPaths; ++i) {
         auto svRow = svMatrix[i];
         for (size_t j = 0; j < nStateVariables; ++j) {
@@ -22,29 +68,40 @@ void AMCEngine::rescaleStateVariable(Matrix& svMatrix) const {
     }
 }
 
-size_t AMCEngine::getBasisSize() const {
-    const size_t nStateVariables = m_stateVariables[0].getNbCols();
+size_t AMCEngine::getBasisSize(const bool withLinearSV) const {
     size_t basisSize;
-    if (!m_useCrossTerms || nStateVariables <= 1) {
-        basisSize = 1 + nStateVariables * m_polynomialDegree;
+    if (!m_useCrossTerms || m_nStateVariables <= 1) {
+        // The basis is (1, X_1^1 ... X_1^n, X_m^1 ... X_m^n)
+        // This is of size 1 + m * n.
+        basisSize = 1 + m_nStateVariables * m_polynomialDegree;
     }
     else {
-        // Not implemented.
-        return 0;
+        // The basis is the set of monomials of m variables, and of degree <= n
+        // This is of (m + n) choose n = (m + n)! / (m! * n!) = ((m + 1) * ... * (m + n)) / (1 * ... * n).
+        basisSize = 1;
+        for (size_t i = m_nStateVariables + 1; i <= m_nStateVariables + m_polynomialDegree; ++i) {
+            basisSize *= i;
     }
-    const size_t nLinearStateVariables = m_linearStateVariables[0].getNbCols();
-    return (nLinearStateVariables + 1) * basisSize;
+        for (size_t i = 2; i <= m_polynomialDegree; ++i) {
+            basisSize /= i;
+        }
+    }
+    // Finally, the linear state variables are degree 1. We extend the basis as follows:
+    // (1 * B_1 ... 1 * B_s) (L_1 * B_1 ... L_1 * B_s) ... (L_p * B_1 ... L_p * B_s)
+    // (L_1 ... L_p are the linear SV, and B_1 ... B_s the basis computed earlier)
+    // This is of size s * (p + 1).
+    return (withLinearSV ? (m_nLinearStateVariables + 1) : 1) * basisSize;
 }
 
-void AMCEngine::computeBasis(Matrix& svMatrix, Matrix& linearSVMatrix) {
-    const size_t nStateVariables = svMatrix.getNbCols();
-    size_t basisSize;
-    if (!m_useCrossTerms || nStateVariables <= 1) {
+void AMCEngine::computeBasis(Matrix<double>& svMatrix, Matrix<double>& linearSVMatrix) {
+    size_t basisSize = getBasisSize(false);
+    if (!m_useCrossTerms || m_nStateVariables <= 1) {
+        // Computes (1, X_1^1 ... X_1^n, X_2^1 ... X_2^n, ... , X_m^1 ... X_m^n)
         for (size_t i = 0; i < m_nPaths; ++i) {
             auto basisRow = m_basis[i];
             const auto* svRow = svMatrix[i];
             basisRow[0] = 1.0;
-            for (size_t j = 0; j < nStateVariables; ++j) {
+            for (size_t j = 0; j < m_nStateVariables; ++j) {
                 const double x = svRow[j];
                 double x_k = x;
                 size_t offset = j * m_polynomialDegree;
@@ -57,16 +114,42 @@ void AMCEngine::computeBasis(Matrix& svMatrix, Matrix& linearSVMatrix) {
         basisSize = 1 + nStateVariables * m_polynomialDegree;
     }
     else {
-        // Not implemented.
-        basisSize = 0;
+        Matrix<double> monomialsPerStateVariable(m_nStateVariables, m_polynomialDegree + 1);
+        for (size_t i = 0; i < m_nPaths; ++i) {
+            // We precompute (1 X_1 ... X_1^n) ... (1 X_m ... X_m^n) into monomialsPerStateVariable
+            // This is very similar to the basis computation without cross terms, but "1" is repeated multiple
+            // times for code readability.
+            const auto* svRow = svMatrix[i];
+            for (size_t j = 0; j < m_nStateVariables; ++j) {
+                const double x = svRow[j];
+                double x_k = x;
+                auto monomialsRow = monomialsPerStateVariable[j];
+                monomialsRow[0] = 1.0;
+                for (size_t k = 1; k <= m_polynomialDegree; ++k) {
+                    monomialsRow[k] = x_k;
+                    x_k *= x;
     }
-    const size_t nLinearStateVariables = linearSVMatrix.getNbCols();
-    if (!nLinearStateVariables)
+            }
+            // Then, we use the precomputed matrix and exponents to compute the basis :
+            // \prod{S_k^\alpha_k} = \prod{monomialsPerStateVariable[k][\alpha_k]}
+            auto basisRow = m_basis[i];
+            for (size_t j = 0; j < basisSize; ++j) {
+                auto monomialsExponentRow = m_monomialExponents[j];
+                basisRow[j] = 1.0;
+                for (size_t k = 0; k < m_nStateVariables; ++k) {
+                    basisRow[j] *= monomialsPerStateVariable[k][monomialsExponentRow[k]];
+                }
+            }
+        }
+    }
+    if (!m_nLinearStateVariables)
         return;
+    // Expand the basis, as explained in getBasisSize().
+    // (1 * B_1 ... 1 * B_s) (L_1 * B_1 ... L_1 * B_s) ... (L_p * B_1 ... L_p * B_s)
     for (size_t i = 0; i < m_nPaths; ++i) {
         const auto* linearSVRow = linearSVMatrix[i];
         auto basisRow = m_basis[i];
-        for (size_t j = 0; j < nLinearStateVariables; ++j) {
+        for (size_t j = 0; j < m_nLinearStateVariables; ++j) {
             const double x = linearSVRow[j];
             size_t offset = (j + 1) * basisSize;
             for (size_t k = 0; k < basisSize; ++k) {
@@ -77,14 +160,22 @@ void AMCEngine::computeBasis(Matrix& svMatrix, Matrix& linearSVMatrix) {
 }
 
 void AMCEngine::updateFutureFlows(const size_t exIdx) {
+    // We rescale the current exercise rebate by the exercise decision.
     for (size_t j = 0; j < m_nPaths; ++j) {
         m_exerciseFlows[exIdx].scaleAmount(j, m_exerciseDecision[j]);
     }
+    // Future exercise rebates are scaled by the 'alive probability', that is (1 - exercise decision).
     for (size_t nextEx = exIdx + 1; nextEx < m_nExercises; ++nextEx) {
         for (size_t j = 0; j < m_nPaths; ++j) {
             m_exerciseFlows[nextEx].scaleAmount(j, 1.0 - m_exerciseDecision[j]);
         }
     }
+    // Future contract flows are also scaled by the 'alive probability'.
+    // If a flow is included in the rebate, and is observed at the exercise observation date, its exercise index is exIdx 
+    // => thus, it is not rescaled as it will be paid regardless of exercise.
+    // If a flow is not included in the rebate and observed at the exercise observation date, its exercise index is exIdx + 1
+    // => thus, it is rescaled as it will NOT be paid in case of exercise.
+    // Contract flows with Exercise Index == (m_nExercises + 1) are bullet (paid regardless of an exercise event being triggered), so not rescaled.
     for (auto& flow : m_contractFlows) {
         // Flows with Exercise Index == (m_nExercises + 1) are bullet (paid regardless of an exercise event) so not geared.
         if (flow.getExerciseIndex() > exIdx && flow.getExerciseIndex() != m_nExercises + 1) {
@@ -96,10 +187,16 @@ void AMCEngine::updateFutureFlows(const size_t exIdx) {
 }
 
 void AMCEngine::rescaleByWeights(const size_t exIdx) {
+    // We are rescaling the trajectories by weights in order to give more or less importance 
+    // to some paths.
+    // We are then solving the linear system (tX W^2 X)^-1 * (tX W^2 Y). (please note the square here !)
+    // Note that W is a diagonal *positive* matrix, with W being the weights.
+    // the solution to the linear regression becomes min_p(W*X*p - W*Y) = min_p(\sum_i w_i^2 (<X_i,p> - y_i)^2)
     m_exercises[exIdx]->computeWeights(m_weights, m_performances[exIdx]);
     for (size_t j = 0; j < m_nPaths; ++j) {
         m_conditionalExpectation[j] *= m_weights[j];
     }
+    // Here, we need to keep track of the basis before rescaling, as the regressed conditional expectation is X*p.
     const size_t basisSize = m_basis.getNbCols();
     for (size_t j = 0; j < m_nPaths; ++j) {
         auto basisWeightedRow = m_basisWeighted[j];
@@ -132,13 +229,15 @@ bool AMCEngine::needRegression(const size_t exIdx) {
 }
 
 void AMCEngine::clampConditionalExpectation(const double minimumGain, const double maximumGain) {
+    // This function is clamping the regressed conditional expectation by the minimum and maximum realized trajectories.
+    // This is done to stabilize the regression for lower density zones.
     for (size_t j = 0; j < m_nPaths; ++j) {
         m_conditionalExpectation[j] = std::max(minimumGain, std::min(m_conditionalExpectation[j], maximumGain));
     }
 }
 
 void AMCEngine::computeConditionalExpectation(const size_t exIdx) {
-    // m_conditionalExpectation is the conditional expectation of (m_premiumBefore - rebate) - we regress on the exercise gain.
+    // m_conditionalExpectation is the conditional expectation of (m_premiumBefore - rebate) as we regress on the exercise gain.
     double minimumGain = DBL_MAX, maximumGain = -DBL_MAX;
     for (size_t j = 0; j < m_nPaths; ++j) {
         const double gain = m_premiumBefore[j] - (m_exerciseFlows[exIdx].getAmount(j) * m_exerciseFlows[exIdx].getDFObsToSettleDate(j));
@@ -160,11 +259,15 @@ void AMCEngine::computeConditionalExpectation(const size_t exIdx) {
 }
 
 void AMCEngine::computePremiumBeforeExercise(const size_t exIdx) {
+    // The premium (before exercise) contains:
+    // 1- The premium at the next exercise (exIdx + 1), discounted to the current exercise observation date.
     if (exIdx + 1 < m_nExercises) {
         for (size_t j = 0; j < m_nPaths; ++j) {
             m_premiumBefore[j] = m_premiumAfter[j] * m_exerciseFlows[exIdx + 1].getDFToObservationDate(j) / m_exerciseFlows[exIdx].getDFToObservationDate(j);
         }
     }
+    // 2- The sum of contract flows with exercise index (exIdx + 1 - i.e. the continuation flows, not paid in case of exercise at exIdx), 
+    // also discounted to the current exercise observation date.
     for (const auto& flow : m_contractFlows) {
         if (flow.getExerciseIndex() == exIdx + 1) {
             for (size_t j = 0; j < m_nPaths; ++j) {
@@ -175,11 +278,15 @@ void AMCEngine::computePremiumBeforeExercise(const size_t exIdx) {
 }
 
 void AMCEngine::computePremiumAfterExercise(const size_t exIdx) {
+    // After exercise, we have the premium being a linear combination of the rebate flow (discounted at the exercise observation date) and
+    // the continuation flows.
     for (size_t j = 0; j < m_nPaths; ++j) {
         m_premiumAfter[j] =
             m_exerciseDecision[j] * (m_exerciseFlows[exIdx].getAmount(j) * m_exerciseFlows[exIdx].getDFObsToSettleDate(j))
             + (1.0 - m_exerciseDecision[j]) * m_premiumBefore[j];
     }
+    // For Callable and Putable exercises, we make the additional check that the premium should decrease (resp. increase) after the exercise.
+    // If it is not the case, we revert the exercise decision.
     const bool isCallable = m_exercises[exIdx]->isCallable(), isPutable = m_exercises[exIdx]->isPutable();
     if (isCallable || isPutable) {
         double premiumBeforeEx = 0.0, premiumAfterEx = 0.0;
@@ -199,6 +306,7 @@ void AMCEngine::computePremiumAfterExercise(const size_t exIdx) {
             }
         }
     }
+    // Finally, it is possible that we cannot exercise the whote option at once. The exercise decision is then capped by m_exercisableProportion.
     if (m_exercisableProportion < 1.0) {
         for (size_t j = 0; j < m_nPaths; ++j) {
             m_exerciseDecision[j] = std::min(m_exercisableProportion, m_exerciseDecision[j]);
@@ -210,6 +318,7 @@ void AMCEngine::computePremiumAfterExercise(const size_t exIdx) {
 }
 
 void AMCEngine::computeIndicators(const size_t exIdx) {
+    // Specific indicators for AMCEngine.
     double premiumBeforeEx = 0.0, premiumAfterEx = 0.0, exitProba = 0.0;
     for (size_t j = 0; j < m_nPaths; ++j) {
         premiumBeforeEx += m_premiumBefore[j];
@@ -240,6 +349,7 @@ void AMCEngine::setFlowExerciseIndex(AMCFlow& flow) const {
         )));
         // If the flow is not included in the rebate, yet has the same observation date as the exercise, we allocate it
         // to the next exercise period, so it is effectively paid if we did not exercise (and not paid if we exercise).
+        // Otherwise, it will be allocated to the current exIdx, and paid regardless of the exercise decision.
         if (exIdx < m_nExercises && !flow.isIncludedInRebate() && flow.getObservationDate() == m_exerciseFlows[exIdx].getObservationDate())
             flow.setExerciseIndex(exIdx + 1);
         else

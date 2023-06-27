@@ -25,7 +25,7 @@ AMCSmoothing_Parameters::AMCSmoothing_Parameters(
     m_nUnderlyings = deltaMax.size();
     m_adjustedDMax.resize(m_nUnderlyings);
     m_perfGearing = (m_barrierType == BarrierType::UpBarrier) ? 1.0 : -1.0;
-    m_individualSmoothings = Matrix(m_nPaths, m_nUnderlyings);
+    m_individualSmoothings = Matrix<double>(m_nPaths, m_nUnderlyings);
     adjustDeltaMax();
 }
 
@@ -49,7 +49,7 @@ double AMCSmoothing_Parameters::callSpreadUnsmoothed(const double x) const {
     return x >= 0.0 ? 1.0 : 0.0;
 }
 
-void AMCSmoothing_Parameters::getIndividualSmoothing(std::vector<double> const& regressedGain, Matrix const& individualPerformances) const {
+void AMCSmoothing_Parameters::getIndividualSmoothing(std::vector<double> const& regressedGain, Matrix<double> const& individualPerformances) const {
     if (!m_disableSmoothing && m_smoothingGearing > 0.0) [[likely]] {
         for (size_t i = 0; i < m_nPaths; ++i) {
             auto* indivSmoothingRow = m_individualSmoothings[i];
@@ -81,7 +81,7 @@ void AMCSmoothing_Parameters::getIndividualSmoothing(std::vector<double> const& 
 }
 
 /* Computing the performance given the individual individualPerformances */
-void AMCSmoothing_Parameters_Mono::getPerformance(Matrix const& individualPerformances, std::vector<double>& performance) const {
+void AMCSmoothing_Parameters_Mono::getPerformance(Matrix<double> const& individualPerformances, std::vector<double>& performance) const {
     for (size_t i = 0; i < m_nPaths; ++i) {
         const auto* indivPerfRow = individualPerformances[i];
         assert(indivPerfRow);
@@ -89,7 +89,7 @@ void AMCSmoothing_Parameters_Mono::getPerformance(Matrix const& individualPerfor
     }
 }
 
-void AMCSmoothing_Parameters_WorstOf::getPerformance(Matrix const& individualPerformances, std::vector<double>& performance) const {
+void AMCSmoothing_Parameters_WorstOf::getPerformance(Matrix<double> const& individualPerformances, std::vector<double>& performance) const {
     for (size_t i = 0; i < m_nPaths; ++i) {
         const auto* indivPerfRow = individualPerformances[i];
         assert(indivPerfRow);
@@ -100,7 +100,7 @@ void AMCSmoothing_Parameters_WorstOf::getPerformance(Matrix const& individualPer
     }
 }
 
-void AMCSmoothing_Parameters_BestOf::getPerformance(Matrix const& individualPerformances, std::vector<double>& performance) const {
+void AMCSmoothing_Parameters_BestOf::getPerformance(Matrix<double> const& individualPerformances, std::vector<double>& performance) const {
     for (size_t i = 0; i < m_nPaths; ++i) {
         const auto* indivPerfRow = individualPerformances[i];
         assert(indivPerfRow);
@@ -112,7 +112,7 @@ void AMCSmoothing_Parameters_BestOf::getPerformance(Matrix const& individualPerf
 }
 
 /* Computes the smoothing indicator */
-void AMCSmoothing_Parameters_Mono::getSmoothing(std::vector<double> const& regressedGain, Matrix const& individualPerformances, std::vector<double>& smoothing) const {
+void AMCSmoothing_Parameters_Mono::getSmoothing(std::vector<double> const& regressedGain, Matrix<double> const& individualPerformances, std::vector<double>& smoothing) const {
     getIndividualSmoothing(regressedGain, individualPerformances);
     for (size_t i = 0; i < m_nPaths; ++i) {
         smoothing[i] = m_individualSmoothings[i][0];
@@ -127,7 +127,7 @@ bool AMCSmoothing_Parameters_BestOf::takeMinimumOfSmoothings() const {
     return m_barrierType == BarrierType::DownBarrier;
 }
 
-void AMCSmoothing_Parameters_Multi::getSmoothing(std::vector<double> const& regressedGain, Matrix const& individualPerformances, std::vector<double>& smoothing) const {
+void AMCSmoothing_Parameters_Multi::getSmoothing(std::vector<double> const& regressedGain, Matrix<double> const& individualPerformances, std::vector<double>& smoothing) const {
     getIndividualSmoothing(regressedGain, individualPerformances);
     if (takeMinimumOfSmoothings()) [[likely]] {
         for (size_t i = 0; i < m_nPaths; ++i) {
