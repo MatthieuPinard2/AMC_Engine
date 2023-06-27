@@ -1,4 +1,5 @@
 #include "AMC_Engine.h"
+#include <cassert>
 
 void AMCEngine::precomputeMonomialExponents() {
     // Do not enter this costly function if we are dealing with a trivial basis.
@@ -13,6 +14,7 @@ void AMCEngine::precomputeMonomialExponents() {
         for (size_t i = 0; i <= m_polynomialDegree; ++i, ++insertIdx) {
             for (size_t j = 0; j <= i; ++j) {
                 auto row = m_monomialExponents[insertIdx];
+                assert(row);
                 row[0] = j; row[1] = i - j;
             }
         }
@@ -22,6 +24,7 @@ void AMCEngine::precomputeMonomialExponents() {
             for (size_t j = 0; j <= i; ++j) {
                 for (size_t k = 0; k <= i - j; ++k, ++insertIdx) {
                     auto row = m_monomialExponents[insertIdx];
+                    assert(row);
                     row[0] = j; row[1] = k; row[2] = i - j - k;
                 }
             }
@@ -33,6 +36,7 @@ void AMCEngine::precomputeMonomialExponents() {
                 for (size_t k = 0; k <= i - j; ++k) {
                     for (size_t l = 0; l <= i - j - k; ++l, ++insertIdx) {
                         auto row = m_monomialExponents[insertIdx];
+                        assert(row);
                         row[0] = j; row[1] = k; row[2] = l; row[3] = i - j - k - l;
                     }
                 }
@@ -61,6 +65,7 @@ void AMCEngine::rescaleStateVariable(Matrix<double>& svMatrix) const {
     // Other State Variables will have mean 0 and variance 1.
     for (size_t i = 0; i < m_nPaths; ++i) {
         auto svRow = svMatrix[i];
+        assert(svRow);
         for (size_t j = 0; j < nStateVariables; ++j) {
             svRow[j] -= meanSV[j];
             svRow[j] /= stdSV[j];
@@ -94,12 +99,14 @@ size_t AMCEngine::getBasisSize(const bool withLinearSV) const {
 }
 
 void AMCEngine::computeBasis(Matrix<double>& svMatrix, Matrix<double>& linearSVMatrix) {
-    size_t basisSize = getBasisSize(false);
+    const size_t basisSize = getBasisSize(false);
     if (!m_useCrossTerms || m_nStateVariables <= 1) {
         // Computes (1, X_1^1 ... X_1^n, X_2^1 ... X_2^n, ... , X_m^1 ... X_m^n)
         for (size_t i = 0; i < m_nPaths; ++i) {
             auto basisRow = m_basis[i];
+            assert(basisRow);
             const auto* svRow = svMatrix[i];
+            assert(svRow);
             basisRow[0] = 1.0;
             for (size_t j = 0; j < m_nStateVariables; ++j) {
                 const double x = svRow[j];
@@ -120,10 +127,12 @@ void AMCEngine::computeBasis(Matrix<double>& svMatrix, Matrix<double>& linearSVM
             // This is very similar to the basis computation without cross terms, but "1" is repeated multiple
             // times for code readability.
             const auto* svRow = svMatrix[i];
+            assert(svRow);
             for (size_t j = 0; j < m_nStateVariables; ++j) {
                 const double x = svRow[j];
                 double x_k = x;
                 auto monomialsRow = monomialsPerStateVariable[j];
+                assert(monomialsRow);
                 monomialsRow[0] = 1.0;
                 for (size_t k = 1; k <= m_polynomialDegree; ++k) {
                     monomialsRow[k] = x_k;
@@ -133,8 +142,10 @@ void AMCEngine::computeBasis(Matrix<double>& svMatrix, Matrix<double>& linearSVM
             // Then, we use the precomputed matrix and exponents to compute the basis :
             // \prod{S_k^\alpha_k} = \prod{monomialsPerStateVariable[k][\alpha_k]}
             auto basisRow = m_basis[i];
+            assert(basisRow);
             for (size_t j = 0; j < basisSize; ++j) {
                 auto monomialsExponentRow = m_monomialExponents[j];
+                assert(monomialsExponentRow);
                 basisRow[j] = 1.0;
                 for (size_t k = 0; k < m_nStateVariables; ++k) {
                     basisRow[j] *= monomialsPerStateVariable[k][monomialsExponentRow[k]];
@@ -148,7 +159,9 @@ void AMCEngine::computeBasis(Matrix<double>& svMatrix, Matrix<double>& linearSVM
     // (1 * B_1 ... 1 * B_s) (L_1 * B_1 ... L_1 * B_s) ... (L_p * B_1 ... L_p * B_s)
     for (size_t i = 0; i < m_nPaths; ++i) {
         const auto* linearSVRow = linearSVMatrix[i];
+        assert(linearSVRow);
         auto basisRow = m_basis[i];
+        assert(basisRow);
         for (size_t j = 0; j < m_nLinearStateVariables; ++j) {
             const double x = linearSVRow[j];
             size_t offset = (j + 1) * basisSize;
@@ -200,7 +213,9 @@ void AMCEngine::rescaleByWeights(const size_t exIdx) {
     const size_t basisSize = m_basis.getNbCols();
     for (size_t j = 0; j < m_nPaths; ++j) {
         auto basisWeightedRow = m_basisWeighted[j];
+        assert(basisWeightedRow);
         const auto* basisRow = m_basis[j];
+        assert(basisRow);
         const double w = m_weights[j];
         for (size_t k = 0; k < basisSize; ++k) {
             basisWeightedRow[k] = basisRow[k] * w;

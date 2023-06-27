@@ -43,6 +43,8 @@ public:
             const size_t otherSize = other.memorySize();
             if (otherSize > thisSize) {
                 m_data = static_cast<T*>(aligned_realloc(m_data, otherSize, alignment));
+                if (!m_data)
+                    throw(std::bad_alloc());
             }
             memcpy(m_data, other.m_data, otherSize);
             m_nRows = other.m_nRows;

@@ -33,7 +33,7 @@ public:
     void scaleAmount(const size_t i, const double scale);
     void setDiscountFactors(const size_t i, const double dfToSettle, const double dfObsToSettle);
     void setExerciseIndex(const size_t exerciseIndex);
-    AMCFlow();
+    AMCFlow() noexcept;
     AMCFlow(
         const size_t nPaths,
         const size_t exerciseIndex,

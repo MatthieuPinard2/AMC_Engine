@@ -54,7 +54,7 @@ void AMCFlow::setExerciseIndex(const size_t exerciseIndex) {
     m_exerciseIndex = exerciseIndex;
 }
 
-AMCFlow::AMCFlow() :
+AMCFlow::AMCFlow() noexcept :
     m_exerciseIndex(0),
     m_observationDate(nullDate),
     m_settlementDate(nullDate),

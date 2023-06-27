@@ -1,10 +1,11 @@
 #include "AMC_Math.h"
+#include <cassert>
 
 // Solves min_x((A*x - b)^0), stores the result in b.
 void solveLinearRegression_SVD(Matrix<double> const& A, std::vector<double>& b) {
     lapack_int rank = 0;
     auto s = static_cast<double*>(mkl_malloc(A.getNbRows() * sizeof(double), 64));
-    Matrix A_copy = A;
+    Matrix<double> A_copy = A;
     LAPACKE_dgelsd(
         LAPACK_ROW_MAJOR,
         static_cast<int>(A.getNbRows()),
@@ -65,6 +66,7 @@ void standardDeviation(Matrix<double> const& X, std::vector<double>& mean, std::
     }
     for (size_t i = 0; i < samples; ++i) {
         auto xRow = X[i];
+        assert(xRow);
         for (size_t j = 0; j < cols; ++j) {
             const double x = xRow[j];
             mean[j] += x;
