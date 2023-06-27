@@ -23,8 +23,8 @@ void AMCExercise::computeWeights(
 }
 
 /* Autocallable Exercise */
-AMCExercise_Autocallable::AMCExercise_Autocallable(AMCSmoothing_Parameters const& smoothingParams) :
-    m_smoothingParams(&smoothingParams) {}
+AMCExercise_Autocallable::AMCExercise_Autocallable(AMCSmoothing_ParametersConstPtr smoothingParams) :
+    m_smoothingParams(smoothingParams) {}
 
 void AMCExercise_Autocallable::computeExercise(
     std::vector<double>& exercise,

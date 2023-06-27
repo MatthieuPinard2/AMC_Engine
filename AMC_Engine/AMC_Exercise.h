@@ -22,7 +22,7 @@ typedef std::shared_ptr<AMCExercise> AMCExercisePtr;
 class AMCExercise_Autocallable : public AMCExercise {
     AMCSmoothing_ParametersConstPtr m_smoothingParams;
 public:
-    AMCExercise_Autocallable(AMCSmoothing_Parameters const& smoothingParams);
+    AMCExercise_Autocallable(AMCSmoothing_ParametersConstPtr smoothingParams);
     void computeExercise(
         std::vector<double>& exercise,
         std::vector<double> const& regressedGain,

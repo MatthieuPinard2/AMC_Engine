@@ -10,8 +10,7 @@ AMCSmoothing_Parameters::AMCSmoothing_Parameters(
     const double notional,
     const double smoothingGearing,
     const BarrierType barrierType,
-    const Time modelDate,
-    const Time exerciseDate) :
+    const bool disableSmoothing) :
     m_nPaths(nPaths),
     m_spreadMin(spreadMin),
     m_spreadMax(spreadMax),
@@ -21,7 +20,7 @@ AMCSmoothing_Parameters::AMCSmoothing_Parameters(
     m_notional(notional),
     m_smoothingGearing(smoothingGearing),
     m_barrierType(barrierType),
-    m_disableSmoothing(exerciseDate <= modelDate) {
+    m_disableSmoothing(disableSmoothing) {
     m_nUnderlyings = deltaMax.size();
     m_adjustedDMax.resize(m_nUnderlyings);
     m_perfGearing = (m_barrierType == BarrierType::UpBarrier) ? 1.0 : -1.0;
@@ -152,4 +151,69 @@ void AMCSmoothing_Parameters_Multi::getSmoothing(std::vector<double> const& regr
             smooth = 1.0 - smooth;
         }
     }
+}
+
+template <class T, class... Args>
+auto toSmoothingSharedPtr(Args&&... args) {
+    auto smoothingParams = T(args...);
+    return std::make_shared<const T>(std::move(smoothingParams));
+}
+
+AMCSmoothing_ParametersConstPtr createSmoothingParameters(
+    const UnderlyingType underlyingType,
+    const size_t nPaths,
+    std::vector<double> const& deltaMax,
+    std::vector<double> const& spreadMin,
+    std::vector<double> const& spreadMax,
+    std::vector<double> const& barrierLevel,
+    std::vector<double> const& FX,
+    const double notional,
+    const double smoothingGearing,
+    const BarrierType barrierType,
+    const Time modelDate,
+    const Time exerciseDate)
+{
+    if (underlyingType == UnderlyingType::Mono) {
+        return toSmoothingSharedPtr<AMCSmoothing_Parameters_Mono>(
+            nPaths,
+            deltaMax,
+            spreadMin,
+            spreadMax,
+            barrierLevel,
+            FX,
+            notional,
+            smoothingGearing,
+            barrierType,
+            exerciseDate <= modelDate
+        );
+    }
+    if (underlyingType == UnderlyingType::WorstOf) {
+        return toSmoothingSharedPtr<AMCSmoothing_Parameters_WorstOf>(
+            nPaths,
+            deltaMax,
+            spreadMin,
+            spreadMax,
+            barrierLevel,
+            FX,
+            notional,
+            smoothingGearing,
+            barrierType,
+            exerciseDate <= modelDate
+        );
+    }
+    if (underlyingType == UnderlyingType::BestOf) {
+        return toSmoothingSharedPtr<AMCSmoothing_Parameters_BestOf>(
+            nPaths,
+            deltaMax,
+            spreadMin,
+            spreadMax,
+            barrierLevel,
+            FX,
+            notional,
+            smoothingGearing,
+            barrierType,
+            exerciseDate <= modelDate
+        );
+    }
+    return AMCSmoothing_ParametersConstPtr();
 }
