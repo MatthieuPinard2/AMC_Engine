@@ -153,9 +153,10 @@ void AMCSmoothing_Parameters_Multi::getSmoothing(std::vector<double> const& regr
     }
 }
 
+// Utility to convert to a shared_ptr
 template <class T, class... Args>
 auto toSmoothingSharedPtr(Args&&... args) {
-    auto smoothingParams = T(args...);
+    const T smoothingParams(args...);
     return std::make_shared<const T>(std::move(smoothingParams));
 }
 
@@ -173,6 +174,7 @@ AMCSmoothing_ParametersConstPtr createSmoothingParameters(
     const Time modelDate,
     const Time exerciseDate)
 {
+    const bool disableSmoothing = (exerciseDate <= modelDate);
     if (underlyingType == UnderlyingType::Mono) {
         return toSmoothingSharedPtr<AMCSmoothing_Parameters_Mono>(
             nPaths,
@@ -184,7 +186,7 @@ AMCSmoothing_ParametersConstPtr createSmoothingParameters(
             notional,
             smoothingGearing,
             barrierType,
-            exerciseDate <= modelDate
+            disableSmoothing
         );
     }
     if (underlyingType == UnderlyingType::WorstOf) {
@@ -198,7 +200,7 @@ AMCSmoothing_ParametersConstPtr createSmoothingParameters(
             notional,
             smoothingGearing,
             barrierType,
-            exerciseDate <= modelDate
+            disableSmoothing
         );
     }
     if (underlyingType == UnderlyingType::BestOf) {
@@ -212,7 +214,7 @@ AMCSmoothing_ParametersConstPtr createSmoothingParameters(
             notional,
             smoothingGearing,
             barrierType,
-            exerciseDate <= modelDate
+            disableSmoothing
         );
     }
     return AMCSmoothing_ParametersConstPtr();

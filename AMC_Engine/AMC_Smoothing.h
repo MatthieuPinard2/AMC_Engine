@@ -30,6 +30,7 @@ protected:
 public:
     virtual ~AMCSmoothing_Parameters() = default;
     AMCSmoothing_Parameters() = delete;
+    AMCSmoothing_Parameters(AMCSmoothing_Parameters const&) = default;
     AMCSmoothing_Parameters(
         const size_t nPaths,
         std::vector<double> const& deltaMax,
