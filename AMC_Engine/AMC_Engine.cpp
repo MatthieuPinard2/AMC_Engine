@@ -118,7 +118,6 @@ void AMCEngine::computeBasis(Matrix<double>& svMatrix, Matrix<double>& linearSVM
                 }
             }
         }
-        basisSize = 1 + nStateVariables * m_polynomialDegree;
     }
     else {
         Matrix<double> monomialsPerStateVariable(m_nStateVariables, m_polynomialDegree + 1);
@@ -190,7 +189,6 @@ void AMCEngine::updateFutureFlows(const size_t exIdx) {
     // => thus, it is rescaled as it will NOT be paid in case of exercise.
     // Contract flows with Exercise Index == (m_nExercises + 1) are bullet (paid regardless of an exercise event being triggered), so not rescaled.
     for (auto& flow : m_contractFlows) {
-        // Flows with Exercise Index == (m_nExercises + 1) are bullet (paid regardless of an exercise event) so not geared.
         if (flow.getExerciseIndex() > exIdx && flow.getExerciseIndex() != m_nExercises + 1) {
             for (size_t j = 0; j < m_nPaths; ++j) {
                 flow.scaleAmount(j, 1.0 - m_exerciseDecision[j]);

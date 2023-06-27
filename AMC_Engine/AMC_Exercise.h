@@ -20,6 +20,7 @@ typedef std::shared_ptr<AMCExercise> AMCExercisePtr;
 
 /* Autocallable Exercise */
 class AMCExercise_Autocallable : public AMCExercise {
+private:
     AMCSmoothing_ParametersConstPtr m_smoothingParams;
 public:
     AMCExercise_Autocallable(AMCSmoothing_ParametersConstPtr smoothingParams);
@@ -49,6 +50,38 @@ public:
     void computeExercise(
         std::vector<double>& exercise,
         std::vector<double> const& regressedGain,
+        Matrix<double> const& individualPerformances) const override;
+};
+
+/* Conditional Putable Exercise */
+class AMCExercise_ConditionalPutable : public AMCExercise {
+private:
+    AMCSmoothing_ParametersConstPtr m_smoothingParams;
+public:
+    AMCExercise_ConditionalPutable(AMCSmoothing_ParametersConstPtr smoothingParams);
+    bool isPutable() const override;
+    void computeExercise(
+        std::vector<double>& exercise,
+        std::vector<double> const& regressedGain,
+        Matrix<double> const& individualPerformances) const override;
+    void computeWeights(
+        std::vector<double>& weights,
+        Matrix<double> const& individualPerformances) const override;
+};
+
+/* Conditional Callable Exercise */
+class AMCExercise_ConditionalCallable : public AMCExercise {
+private:
+    AMCSmoothing_ParametersConstPtr m_smoothingParams;
+public:
+    AMCExercise_ConditionalCallable(AMCSmoothing_ParametersConstPtr smoothingParams);
+    bool isCallable() const override;
+    void computeExercise(
+        std::vector<double>& exercise,
+        std::vector<double> const& regressedGain,
+        Matrix<double> const& individualPerformances) const override;
+    void computeWeights(
+        std::vector<double>& weights,
         Matrix<double> const& individualPerformances) const override;
 };
 

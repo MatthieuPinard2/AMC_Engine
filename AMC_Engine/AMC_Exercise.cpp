@@ -81,6 +81,92 @@ void AMCExercise_Callable::computeExercise(
     }
 }
 
+// Utility for Conditional Callable + Putable.
+namespace {
+    void computeWeightsForConditional(
+        AMCSmoothing_Parameters const& smoothingParams,
+        std::vector<double>& weights,
+        Matrix<double> const& individualPerformances)
+    {
+        const size_t nPaths = weights.size();
+        double meanPerf = 0.0, stdPerf = 0.0;
+        smoothingParams.getPerformance(individualPerformances, weights);
+        standardDeviation(weights, meanPerf, stdPerf);
+        const double bandwidth = 1.06 * stdPerf * pow(static_cast<double>(nPaths), -0.2);
+        for (size_t i = 0; i < nPaths; ++i) {
+            if (weights[i] >= 0.0) {
+                weights[i] = 1.0;
+            }
+            else {
+                weights[i] /= bandwidth;
+                weights[i] = exp(-0.25 * weights[i] * weights[i]);
+            }
+        }
+    }
+}
+
+/* Conditional Putable Exercise */
+AMCExercise_ConditionalPutable::AMCExercise_ConditionalPutable(AMCSmoothing_ParametersConstPtr smoothingParams) :
+    m_smoothingParams(smoothingParams) {}
+
+bool AMCExercise_ConditionalPutable::isPutable() const {
+    return true;
+}
+
+void AMCExercise_ConditionalPutable::computeExercise(
+    std::vector<double>& exercise,
+    std::vector<double> const& regressedGain,
+    Matrix<double> const& individualPerformances) const
+{
+    const size_t nPaths = exercise.size();
+    std::vector<double> gap(nPaths);
+    for (size_t i = 0; i < nPaths; ++i) {
+        gap[i] = std::min(regressedGain[i], -DBL_EPSILON);
+    }
+    m_smoothingParams->getSmoothing(gap, individualPerformances, exercise);
+    for (size_t i = 0; i < nPaths; ++i) {
+        exercise[i] *= regressedGain[i] < 0.0 ? 1.0 : 0.0;
+    }
+}
+
+void AMCExercise_ConditionalPutable::computeWeights(
+    std::vector<double>& weights,
+    Matrix<double> const& individualPerformances) const
+{
+    computeWeightsForConditional(*m_smoothingParams, weights, individualPerformances);
+}
+
+/* Conditional Callable Exercise */
+AMCExercise_ConditionalCallable::AMCExercise_ConditionalCallable(AMCSmoothing_ParametersConstPtr smoothingParams) :
+    m_smoothingParams(smoothingParams) {}
+
+bool AMCExercise_ConditionalCallable::isCallable() const {
+    return true;
+}
+
+void AMCExercise_ConditionalCallable::computeExercise(
+    std::vector<double>& exercise,
+    std::vector<double> const& regressedGain,
+    Matrix<double> const& individualPerformances) const
+{
+    const size_t nPaths = exercise.size();
+    std::vector<double> gap(nPaths);
+    for (size_t i = 0; i < nPaths; ++i) {
+        gap[i] = std::max(regressedGain[i], DBL_EPSILON);
+    }
+    m_smoothingParams->getSmoothing(gap, individualPerformances, exercise);
+    for (size_t i = 0; i < nPaths; ++i) {
+        exercise[i] *= regressedGain[i] > 0.0 ? 1.0 : 0.0;
+    }
+}
+
+void AMCExercise_ConditionalCallable::computeWeights(
+    std::vector<double>& weights,
+    Matrix<double> const& individualPerformances) const
+{
+    computeWeightsForConditional(*m_smoothingParams, weights, individualPerformances);
+}
+
 /* Null Exercise */
 void AMCExercise_NoExercise::computeExercise(
     std::vector<double>& exercise,
