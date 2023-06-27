@@ -84,7 +84,7 @@ void AMCSmoothing_Parameters_Mono::getPerformance(Matrix<double> const& individu
     for (size_t i = 0; i < m_nPaths; ++i) {
         const auto* indivPerfRow = individualPerformances[i];
         assert(indivPerfRow);
-        performance[i] = indivPerfRow[0];
+        performance[i] = indivPerfRow[0] - m_barrierLevel[0];
     }
 }
 
@@ -94,7 +94,7 @@ void AMCSmoothing_Parameters_WorstOf::getPerformance(Matrix<double> const& indiv
         assert(indivPerfRow);
         performance[i] = DBL_MAX;
         for (size_t j = 0; j < m_nUnderlyings; ++j) {
-            performance[i] = std::min(performance[i], indivPerfRow[j]);
+            performance[i] = std::min(performance[i], indivPerfRow[j] - m_barrierLevel[j]);
         }
     }
 }
@@ -105,7 +105,7 @@ void AMCSmoothing_Parameters_BestOf::getPerformance(Matrix<double> const& indivi
         assert(indivPerfRow);
         performance[i] = -DBL_MAX;
         for (size_t j = 0; j < m_nUnderlyings; ++j) {
-            performance[i] = std::max(performance[i], indivPerfRow[j]);
+            performance[i] = std::max(performance[i], indivPerfRow[j] - m_barrierLevel[j]);
         }
     }
 }
