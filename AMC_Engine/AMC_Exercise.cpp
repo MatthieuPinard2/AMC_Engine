@@ -50,6 +50,9 @@ void AMCExercise_Autocallable::computeWeights(
 }
 
 /* Putable Exercise */
+AMCExercise_Putable::AMCExercise_Putable(const double smoothingWidth) noexcept
+    : m_smoothingWidth(smoothingWidth) {}
+
 bool AMCExercise_Putable::isPutable() const {
     return true;
 }
@@ -60,12 +63,29 @@ void AMCExercise_Putable::computeExercise(
     Matrix<double> const&) const
 {
     const size_t nPaths = exercise.size();
-    for (size_t i = 0; i < nPaths; ++i) {
-        exercise[i] = regressedGain[i] < 0.0 ? 1.0 : 0.0;
+    double mean = 0.0, stdGain = 0.0;
+    bool smoothExercise = false;
+    if (m_smoothingWidth > 0.0) {
+        standardDeviation(regressedGain, mean, stdGain);
+        smoothExercise = (stdGain > 0.0);
+    }
+    if (!smoothExercise) {
+        for (size_t i = 0; i < nPaths; ++i) {
+            exercise[i] = regressedGain[i] < 0.0 ? 1.0 : 0.0;
+        }
+    }
+    else {
+        const double smoothingWidth = m_smoothingWidth * stdGain;
+        for (size_t i = 0; i < nPaths; ++i) {
+            exercise[i] = AMCSmoothing_Parameters::callSpread((0.5 * smoothingWidth - regressedGain[i]) / smoothingWidth);
+        }
     }
 }
 
 /* Callable Exercise */
+AMCExercise_Callable::AMCExercise_Callable(const double smoothingWidth) noexcept
+    : m_smoothingWidth(smoothingWidth) {}
+
 bool AMCExercise_Callable::isCallable() const {
     return true;
 }
@@ -76,8 +96,22 @@ void AMCExercise_Callable::computeExercise(
     Matrix<double> const&) const
 {
     const size_t nPaths = exercise.size();
-    for (size_t i = 0; i < nPaths; ++i) {
-        exercise[i] = regressedGain[i] > 0.0 ? 1.0 : 0.0;
+    double mean = 0.0, stdGain = 0.0;
+    bool smoothExercise = false;
+    if (m_smoothingWidth > 0.0) {
+        standardDeviation(regressedGain, mean, stdGain);
+        smoothExercise = (stdGain > 0.0);
+    }
+    if (!smoothExercise) {
+        for (size_t i = 0; i < nPaths; ++i) {
+            exercise[i] = regressedGain[i] > 0.0 ? 1.0 : 0.0;
+        }
+    }
+    else {
+        const double smoothingWidth = m_smoothingWidth * stdGain;
+        for (size_t i = 0; i < nPaths; ++i) {
+            exercise[i] = AMCSmoothing_Parameters::callSpread((0.5 * smoothingWidth + regressedGain[i]) / smoothingWidth);
+        }
     }
 }
 

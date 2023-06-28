@@ -86,7 +86,7 @@ size_t AMCEngine::getBasisSize(const bool withLinearSV) const {
         basisSize = 1;
         for (size_t i = m_nStateVariables + 1; i <= m_nStateVariables + m_polynomialDegree; ++i) {
             basisSize *= i;
-    }
+        }
         for (size_t i = 2; i <= m_polynomialDegree; ++i) {
             basisSize /= i;
         }
@@ -136,7 +136,7 @@ void AMCEngine::computeBasis(Matrix<double>& svMatrix, Matrix<double>& linearSVM
                 for (size_t k = 1; k <= m_polynomialDegree; ++k) {
                     monomialsRow[k] = x_k;
                     x_k *= x;
-    }
+                }
             }
             // Then, we use the precomputed matrix and exponents to compute the basis :
             // \prod{S_k^\alpha_k} = \prod{monomialsPerStateVariable[k][\alpha_k]}
@@ -235,8 +235,8 @@ bool AMCEngine::needRegression(const size_t exIdx) {
     // We are doing the same for the (future) exercises. Note we also discard AMCExercise_NoExercise.
     for (size_t nextEx = exIdx + 1; nextEx < m_nExercises; ++nextEx) {
         if (!m_exercises[exIdx]->isNoExercise() && m_exerciseFlows[nextEx].getObservationDate() > exDate)
-                return true;
-        }
+            return true;
+    }
     // All flows are known at the exercise date, we do not regress.
     return false;
 }
@@ -341,6 +341,9 @@ void AMCEngine::computeIndicators(const size_t exIdx) {
     exitProba /= double(m_nPaths);
     m_exitImpact[exIdx] = premiumAfterEx - premiumBeforeEx;
     m_exitProbability[exIdx] = exitProba;
+    for (size_t nextEx = exIdx + 1; nextEx < m_nExercises; ++nextEx) {
+        m_exitProbability[nextEx] *= (1.0 - exitProba);
+    }
 }
 
 void AMCEngine::setFlowExerciseIndex(AMCFlow& flow) const {

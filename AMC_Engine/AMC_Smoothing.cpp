@@ -39,12 +39,12 @@ size_t AMCSmoothing_Parameters::getUnderlyingsCount() const {
 }
 
 /* Utility functions for the call spread smoothing. */
-double AMCSmoothing_Parameters::callSpread(const double x) const {
+double AMCSmoothing_Parameters::callSpread(const double x) {
     const double y = std::max(0.0, std::min(x, 1.0));
     return (y <= 0.5) ? 2.0 * y * y : (4.0 - 2.0 * y) * y - 1.0;
 }
 
-double AMCSmoothing_Parameters::callSpreadUnsmoothed(const double x) const {
+double AMCSmoothing_Parameters::callSpreadUnsmoothed(const double x) {
     return x >= 0.0 ? 1.0 : 0.0;
 }
 

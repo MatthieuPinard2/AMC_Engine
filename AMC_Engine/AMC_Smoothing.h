@@ -23,11 +23,11 @@ protected:
     double m_perfGearing;
     BarrierType m_barrierType;
     bool m_disableSmoothing;             // If barrierDate <= modelDate, we don't smooth.
-    double callSpread(const double x) const;
-    double callSpreadUnsmoothed(const double x) const;
     void getIndividualSmoothing(std::vector<double> const& regressedGain, Matrix<double> const& individualPerformances) const;
     void adjustDeltaMax();
 public:
+    static double callSpreadUnsmoothed(const double x);
+    static double callSpread(const double x);
     virtual ~AMCSmoothing_Parameters() = default;
     AMCSmoothing_Parameters() = delete;
     AMCSmoothing_Parameters(AMCSmoothing_Parameters const&) = default;

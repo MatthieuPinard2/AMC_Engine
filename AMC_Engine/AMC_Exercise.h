@@ -35,7 +35,10 @@ public:
 
 /* Putable Exercise */
 class AMCExercise_Putable : public AMCExercise {
+private:
+    double m_smoothingWidth;
 public:
+    AMCExercise_Putable(const double smoothingWidth = 0.0) noexcept;
     bool isPutable() const override;
     void computeExercise(
         std::vector<double>& exercise,
@@ -45,7 +48,10 @@ public:
 
 /* Callable Exercise */
 class AMCExercise_Callable : public AMCExercise {
+private:
+    double m_smoothingWidth;
 public:
+    AMCExercise_Callable(const double smoothingWidth = 0.0) noexcept;
     bool isCallable() const override;
     void computeExercise(
         std::vector<double>& exercise,
