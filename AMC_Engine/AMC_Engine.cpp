@@ -309,13 +309,11 @@ void AMCEngine::computePremiumAfterExercise(const size_t exIdx) {
         }
         premiumBeforeEx /= double(m_nPaths);
         premiumAfterEx /= double(m_nPaths);
-        // We made things worse : revert the exercise decision.
+        // We made things worse : do not exercise at this period.
         if ((isCallable && premiumAfterEx > premiumBeforeEx) || (isPutable && premiumAfterEx < premiumBeforeEx)) {
             for (size_t j = 0; j < m_nPaths; ++j) {
-                m_exerciseDecision[j] = 1.0 - m_exerciseDecision[j];
-                m_premiumAfter[j] =
-                    m_exerciseDecision[j] * (m_exerciseFlows[exIdx].getAmount(j) * m_exerciseFlows[exIdx].getDFObsToSettleDate(j))
-                    + (1.0 - m_exerciseDecision[j]) * m_premiumBefore[j];
+                m_exerciseDecision[j] = 0.0;
+                m_premiumAfter[j] = m_premiumBefore[j];
             }
         }
     }
