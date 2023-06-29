@@ -41,7 +41,7 @@ size_t AMCSmoothing_Parameters::getUnderlyingsCount() const {
 /* Utility functions for the call spread smoothing. */
 double AMCSmoothing_Parameters::callSpread(const double x) {
     const double y = std::max(0.0, std::min(x, 1.0));
-    return (y <= 0.5) ? 2.0 * y * y : (4.0 - 2.0 * y) * y - 1.0;
+    return (y <= 0.5) ? (2.0 * y * y) : ((4.0 - 2.0 * y) * y - 1.0);
 }
 
 double AMCSmoothing_Parameters::callSpreadUnsmoothed(const double x) {
@@ -61,7 +61,7 @@ void AMCSmoothing_Parameters::getIndividualSmoothing(std::vector<double> const& 
                 const double performance = m_perfGearing * (indivPerfRow[j] - m_barrierLevel[j]);
                 double epsilon = std::abs(premiumGap / m_adjustedDMax[j]);
                 epsilon = std::max(m_spreadMin[j], std::min(epsilon, m_spreadMax[j])) * m_smoothingGearing;
-                indivSmoothingRow[j] = callSpread(barrierShift + (performance / epsilon));
+                indivSmoothingRow[j] = (epsilon > 0.0) ? callSpread(barrierShift + (performance / epsilon)) : callSpreadUnsmoothed(performance);
             }
         }
     }

@@ -90,5 +90,8 @@ void productMatrixVector(Matrix<double> const& A, std::vector<double>& b);
 // Computes the mean and standard deviation of a vector X.
 void standardDeviation(std::vector<double> const& X, double& mean, double& std);
 
+// Computes the weighted mean and standard deviation of a vector X.
+void standardDeviation(std::vector<double> const& X, std::vector<double> const& W, double& mean, double& std);
+
 // Computes the mean and standard deviation of each column of a matrix X.
 void standardDeviation(Matrix<double> const& X, std::vector<double>& mean, std::vector<double>& std);

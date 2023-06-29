@@ -38,8 +38,8 @@ void AMCFlow::scaleAmount(const size_t i, const double scale) {
 
 void AMCFlow::setDiscountFactors(const size_t i, const double dfToSettle, const double dfObsToSettle) {
     m_dfToSettle[i] = dfToSettle;
-    m_dfToObs[i] = dfToSettle / dfObsToSettle;
     m_dfObsToSettle[i] = dfObsToSettle;
+    m_dfToObs[i] = dfObsToSettle > 0.0 ? (dfToSettle / dfObsToSettle) : 0.0;
 }
 
 bool AMCFlow::isIncludedInRebate() const {

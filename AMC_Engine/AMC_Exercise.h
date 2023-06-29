@@ -63,8 +63,11 @@ public:
 class AMCExercise_ConditionalPutable : public AMCExercise {
 private:
     AMCSmoothing_ParametersConstPtr m_smoothingParams;
+    double m_smoothingWidth;
 public:
-    AMCExercise_ConditionalPutable(AMCSmoothing_ParametersConstPtr smoothingParams);
+    AMCExercise_ConditionalPutable(
+        AMCSmoothing_ParametersConstPtr smoothingParams,
+        const double smoothingWidth = 0.0);
     bool isPutable() const override;
     void computeExercise(
         std::vector<double>& exercise,
@@ -79,8 +82,11 @@ public:
 class AMCExercise_ConditionalCallable : public AMCExercise {
 private:
     AMCSmoothing_ParametersConstPtr m_smoothingParams;
+    double m_smoothingWidth;
 public:
-    AMCExercise_ConditionalCallable(AMCSmoothing_ParametersConstPtr smoothingParams);
+    AMCExercise_ConditionalCallable(
+        AMCSmoothing_ParametersConstPtr smoothingParams,
+        const double smoothingWidth = 0.0);
     bool isCallable() const override;
     void computeExercise(
         std::vector<double>& exercise,

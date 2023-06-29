@@ -357,7 +357,7 @@ void AMCEngine::setFlowExerciseIndex(AMCFlow& flow) const {
             m_exerciseFlows.cbegin(),
             std::lower_bound(
                 m_exerciseFlows.cbegin(), m_exerciseFlows.cend(), flow,
-                [](AMCFlow const& a, AMCFlow const& b) {
+                [](AMCFlow const& a, AMCFlow const& b) -> bool {
                     return a.getObservationDate() < b.getObservationDate();
                 }
         )));
