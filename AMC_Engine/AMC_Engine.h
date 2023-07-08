@@ -36,6 +36,7 @@ private:
     Matrix<size_t> m_monomialExponents;
     size_t m_nStateVariables;
     size_t m_nLinearStateVariables;
+    Matrix<double> m_monomialsPerStateVariable;
     // Private functions
     void rescaleStateVariable(Matrix<double>& svMatrix) const;
     size_t getBasisSize(const bool withLinearSV) const;

@@ -82,7 +82,7 @@ public:
 };
 
 // Solves min_x((A*x - b)^0), stores the result in b.
-void solveLinearRegression_SVD(Matrix<double> const& A, std::vector<double>& b);
+void solveLinearRegression_SVD(Matrix<double>& A, std::vector<double>& b);
 
 // Computes b <- A * b.
 void productMatrixVector(Matrix<double> const& A, std::vector<double>& b);

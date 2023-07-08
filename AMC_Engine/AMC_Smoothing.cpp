@@ -38,7 +38,7 @@ size_t AMCSmoothing_Parameters::getUnderlyingsCount() const {
     return m_nUnderlyings;
 }
 
-/* Utility functions for the call spread smoothing. */
+/* Utility static functions for the call spread smoothing. */
 double AMCSmoothing_Parameters::callSpread(const double x) {
     const double y = std::max(0.0, std::min(x, 1.0));
     return (y <= 0.5) ? (2.0 * y * y) : ((4.0 - 2.0 * y) * y - 1.0);
@@ -61,7 +61,12 @@ void AMCSmoothing_Parameters::getIndividualSmoothing(std::vector<double> const& 
                 const double performance = m_perfGearing * (indivPerfRow[j] - m_barrierLevel[j]);
                 double epsilon = std::abs(premiumGap / m_adjustedDMax[j]);
                 epsilon = std::max(m_spreadMin[j], std::min(epsilon, m_spreadMax[j])) * m_smoothingGearing;
-                indivSmoothingRow[j] = (epsilon > 0.0) ? callSpread(barrierShift + (performance / epsilon)) : callSpreadUnsmoothed(performance);
+                if (epsilon > 0.0) [[likely]] {
+                    indivSmoothingRow[j] = callSpread(barrierShift + (performance / epsilon));
+                }
+                else {
+                    indivSmoothingRow[j] = callSpreadUnsmoothed(performance);
+                }
             }
         }
     }
@@ -158,8 +163,7 @@ void AMCSmoothing_Parameters_Multi::getSmoothing(std::vector<double> const& regr
 // Utility to convert to a shared_ptr
 template <class T, class... Args>
 auto toSmoothingSharedPtr(Args&&... args) {
-    const T smoothingParams(args...);
-    return std::make_shared<const T>(std::move(smoothingParams));
+    return std::make_shared<const T>(std::move(T(args...)));
 }
 
 AMCSmoothing_ParametersConstPtr createSmoothingParameters(

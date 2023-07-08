@@ -1,17 +1,16 @@
 #include "AMC_Math.h"
 #include <cassert>
 
-// Solves min_x((A*x - b)^0), stores the result in b.
-void solveLinearRegression_SVD(Matrix<double> const& A, std::vector<double>& b) {
+// Solves min_x((A*x - b)^0), stores the result in b. We allow A to be overriden.
+void solveLinearRegression_SVD(Matrix<double>& A, std::vector<double>& b) {
     lapack_int rank = 0;
-    auto s = static_cast<double*>(mkl_malloc(A.getNbRows() * sizeof(double), 64));
-    Matrix<double> A_copy = A;
+    auto s = static_cast<double*>(mkl_malloc(std::min(A.getNbRows(), A.getNbCols()) * sizeof(double), 64));
     LAPACKE_dgelsd(
         LAPACK_ROW_MAJOR,
         static_cast<int>(A.getNbRows()),
         static_cast<int>(A.getNbCols()),
         1,
-        A_copy.data(),
+        A.data(),
         static_cast<int>(A.getNbCols()),
         b.data(),
         1,

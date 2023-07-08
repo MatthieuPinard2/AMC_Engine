@@ -19,13 +19,13 @@ namespace {
         }
         if (!smoothExercise) {
             for (size_t i = 0; i < nPaths; ++i) {
-                exercise[i] *= (gainGearing * regressedGain[i]) > 0.0 ? 1.0 : 0.0;
+                exercise[i] = (gainGearing * regressedGain[i]) > 0.0 ? 1.0 : 0.0;
             }
         }
         else {
             const double smoothingWidth = smoothingWidthFactor * stdGain;
             for (size_t i = 0; i < nPaths; ++i) {
-                exercise[i] *= AMCSmoothing_Parameters::callSpread(0.5 + (gainGearing * regressedGain[i] / smoothingWidth));
+                exercise[i] = AMCSmoothing_Parameters::callSpread(0.5 + (gainGearing * regressedGain[i] / smoothingWidth));
             }
         }
     }

@@ -5,10 +5,6 @@ void AMCEngine::precomputeMonomialExponents() {
     // Do not enter this costly function if we are dealing with a trivial basis.
     if (!m_useCrossTerms || m_nStateVariables <= 1)
         return;
-    // The exponents already have been computed, we can return.
-    if (m_monomialExponents.getNbCols() == m_nStateVariables)
-        return;
-    m_monomialExponents = Matrix<size_t>(getBasisSize(false), m_nStateVariables);
     size_t insertIdx = 0;
     if (m_nStateVariables == 2) {
         for (size_t i = 0; i <= m_polynomialDegree; ++i, ++insertIdx) {
@@ -120,9 +116,8 @@ void AMCEngine::computeBasis(Matrix<double>& svMatrix, Matrix<double>& linearSVM
         }
     }
     else {
-        Matrix<double> monomialsPerStateVariable(m_nStateVariables, m_polynomialDegree + 1);
         for (size_t i = 0; i < m_nPaths; ++i) {
-            // We precompute (1 X_1 ... X_1^n) ... (1 X_m ... X_m^n) into monomialsPerStateVariable
+            // We precompute (1 X_1 ... X_1^n) ... (1 X_m ... X_m^n) into m_monomialsPerStateVariable
             // This is very similar to the basis computation without cross terms, but "1" is repeated multiple
             // times for code readability.
             const auto* svRow = svMatrix[i];
@@ -130,7 +125,7 @@ void AMCEngine::computeBasis(Matrix<double>& svMatrix, Matrix<double>& linearSVM
             for (size_t j = 0; j < m_nStateVariables; ++j) {
                 const double x = svRow[j];
                 double x_k = x;
-                auto monomialsRow = monomialsPerStateVariable[j];
+                auto monomialsRow = m_monomialsPerStateVariable[j];
                 assert(monomialsRow);
                 monomialsRow[0] = 1.0;
                 for (size_t k = 1; k <= m_polynomialDegree; ++k) {
@@ -139,7 +134,7 @@ void AMCEngine::computeBasis(Matrix<double>& svMatrix, Matrix<double>& linearSVM
                 }
             }
             // Then, we use the precomputed matrix and exponents to compute the basis :
-            // \prod{S_k^\alpha_k} = \prod{monomialsPerStateVariable[k][\alpha_k]}
+            // \prod{S_k^\alpha_k} = \prod{m_monomialsPerStateVariable[k][\alpha_k]}
             auto basisRow = m_basis[i];
             assert(basisRow);
             for (size_t j = 0; j < basisSize; ++j) {
@@ -147,7 +142,7 @@ void AMCEngine::computeBasis(Matrix<double>& svMatrix, Matrix<double>& linearSVM
                 assert(monomialsExponentRow);
                 basisRow[j] = 1.0;
                 for (size_t k = 0; k < m_nStateVariables; ++k) {
-                    basisRow[j] *= monomialsPerStateVariable[k][monomialsExponentRow[k]];
+                    basisRow[j] *= m_monomialsPerStateVariable[k][monomialsExponentRow[k]];
                 }
             }
         }
@@ -234,7 +229,7 @@ bool AMCEngine::needRegression(const size_t exIdx) {
     }
     // We are doing the same for the (future) exercises. Note we also discard AMCExercise_NoExercise.
     for (size_t nextEx = exIdx + 1; nextEx < m_nExercises; ++nextEx) {
-        if (!m_exercises[exIdx]->isNoExercise() && m_exerciseFlows[nextEx].getObservationDate() > exDate)
+        if (!m_exercises[nextEx]->isNoExercise() && m_exerciseFlows[nextEx].getObservationDate() > exDate)
             return true;
     }
     // All flows are known at the exercise date, we do not regress.
@@ -317,7 +312,7 @@ void AMCEngine::computePremiumAfterExercise(const size_t exIdx) {
             }
         }
     }
-    // Finally, it is possible that we cannot exercise the whote option at once. The exercise decision is then capped by m_exercisableProportion.
+    // Finally, it is possible that we cannot exercise the whole option at once. The exercise decision is then capped by m_exercisableProportion.
     if (m_exercisableProportion < 1.0) {
         for (size_t j = 0; j < m_nPaths; ++j) {
             m_exerciseDecision[j] = std::min(m_exercisableProportion, m_exerciseDecision[j]);
@@ -351,8 +346,9 @@ void AMCEngine::setFlowExerciseIndex(AMCFlow& flow) const {
     if (flow.isBulletFlow()) {
         flow.setExerciseIndex(m_nExercises + 1);
     }
-    else {
-        // We are allocating each flow so that exIdx(flow) = i <=> exDate[i - 1] < obs(flow) <= exDate[i]
+    // For flows included in the rebate, we are allocating so that exIdx(flow) = i <=> exDate[i - 1] < obs(flow) <= exDate[i]
+    // This way, the flow will be allocated to the current exIdx, and paid regardless of the exercise decision.
+    else if (flow.isIncludedInRebate()) {
         const size_t exIdx = static_cast<size_t>(std::distance(
             m_exerciseFlows.cbegin(),
             std::lower_bound(
@@ -361,13 +357,20 @@ void AMCEngine::setFlowExerciseIndex(AMCFlow& flow) const {
                     return a.getObservationDate() < b.getObservationDate();
                 }
         )));
-        // If the flow is not included in the rebate, yet has the same observation date as the exercise, we allocate it
-        // to the next exercise period, so it is effectively paid if we did not exercise (and not paid if we exercise).
-        // Otherwise, it will be allocated to the current exIdx, and paid regardless of the exercise decision.
-        if (exIdx < m_nExercises && !flow.isIncludedInRebate() && flow.getObservationDate() == m_exerciseFlows[exIdx].getObservationDate())
-            flow.setExerciseIndex(exIdx + 1);
-        else
-            flow.setExerciseIndex(exIdx);
+        flow.setExerciseIndex(exIdx);
+    }
+    // For flows not included in the rebate, we are allocating so that exIdx(flow) = i + 1 <=> exDate[i] <= obs(flow) < exDate[i + 1],
+    // so it is effectively paid if we did not exercise (and not paid if we exercise).
+    else {
+        const size_t exIdx = static_cast<size_t>(std::distance(
+            m_exerciseFlows.cbegin(),
+            std::upper_bound(
+                m_exerciseFlows.cbegin(), m_exerciseFlows.cend(), flow,
+                [](AMCFlow const& a, AMCFlow const& b) -> bool {
+                    return a.getObservationDate() < b.getObservationDate();
+                }
+        )));
+        flow.setExerciseIndex(exIdx);
     }
 }
 
