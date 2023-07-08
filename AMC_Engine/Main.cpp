@@ -1,5 +1,4 @@
 /*
-3/ Smoothing of callable/putable exercise
 4/ kMeans
 9/ Simultaneous Callable + Putable
 */
@@ -8,5 +7,8 @@
 
 int main()
 {
+    AMCEngine engine;
+    engine.computeForward();
+    engine.computeBackward();
     return 0;
 }
