@@ -37,6 +37,9 @@ private:
     size_t m_nStateVariables;
     size_t m_nLinearStateVariables;
     Matrix<double> m_monomialsPerStateVariable;
+    // Smoothing related.
+    double m_smoothingWidth;
+    double m_smoothingGearing;
     // Private functions
     void rescaleStateVariable(Matrix<double>& svMatrix) const;
     size_t getBasisSize(const bool withLinearSV) const;
@@ -51,10 +54,12 @@ private:
     void computeIndicators(const size_t exIdx);
     void setFlowExerciseIndex(AMCFlow& flow) const;
     void precomputeMonomialExponents();
+    double getSmoothingWidth(const size_t exIdx) const;
 public:
     AMCEngine(AMCEngine const&) = delete;
     AMCEngine(AMCEngine&&) = delete;
     AMCEngine& operator=(AMCEngine const&) = delete;
+    AMCEngine& operator=(AMCEngine&&) = delete;
     AMCEngine();
     void computeForward();
     void computeBackward();

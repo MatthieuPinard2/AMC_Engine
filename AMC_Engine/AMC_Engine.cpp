@@ -1,17 +1,24 @@
 #include "AMC_Engine.h"
 #include <cassert>
 
-#include <iostream>
-#include <fstream>
+double AMCEngine::getSmoothingWidth(const size_t exIdx) const {
+    // Disable the smoothing at model date.
+    if (m_exerciseFlows[exIdx].getObservationDate() <= m_modelDate)
+        return 0.0;
+    return m_smoothingWidth * m_smoothingGearing;
+}
 
 void AMCEngine::precomputeMonomialExponents() {
     // Do not enter this costly function if we are dealing with a trivial basis.
     if (!m_useCrossTerms || m_nStateVariables <= 1)
         return;
+    // The basis would be huge. We don't compute it for performance reasons, and because the 
+    // SVD regression would be of very low quality.
+    assert(m_nStateVariables <= 4);
     size_t insertIdx = 0;
     if (m_nStateVariables == 2) {
-        for (size_t i = 0; i <= m_polynomialDegree; ++i, ++insertIdx) {
-            for (size_t j = 0; j <= i; ++j) {
+        for (size_t i = 0; i <= m_polynomialDegree; ++i) {
+            for (size_t j = 0; j <= i; ++j, ++insertIdx) {
                 auto row = m_monomialExponents[insertIdx];
                 assert(row);
                 row[0] = j; row[1] = i - j;
@@ -42,10 +49,6 @@ void AMCEngine::precomputeMonomialExponents() {
             }
         }
     }
-    else {
-        // The basis would be huge. We don't compute it for performance reasons, and because the 
-        // SVD regression would be of very low quality.
-    }
 }
 
 void AMCEngine::rescaleStateVariable(Matrix<double>& svMatrix) const {
@@ -54,7 +57,7 @@ void AMCEngine::rescaleStateVariable(Matrix<double>& svMatrix) const {
         return;
     std::vector<double> meanSV(nStateVariables), stdSV(nStateVariables);
     standardDeviation(svMatrix, meanSV, stdSV);
-    // State Variables with 0 variance will be replaced by ones. (so it is rank one)
+    // State Variables with 0 variance will be replaced by ones. (so the system is rank one)
     for (size_t j = 0; j < nStateVariables; ++j) {
         if (stdSV[j] <= 0.0) {
             meanSV[j] -= 1.0;
@@ -340,9 +343,9 @@ void AMCEngine::computeIndicators(const size_t exIdx) {
         premiumAfterEx += m_premiumAfter[j];
         exitProba += m_exerciseDecision[j];
     }
-    premiumBeforeEx /= double(m_nPaths);
-    premiumAfterEx /= double(m_nPaths);
-    exitProba /= double(m_nPaths);
+    premiumBeforeEx /= static_cast<double>(m_nPaths);
+    premiumAfterEx /= static_cast<double>(m_nPaths);
+    exitProba /= static_cast<double>(m_nPaths);
     m_exitImpact[exIdx] = premiumAfterEx - premiumBeforeEx;
     m_exitProbability[exIdx] = exitProba;
     for (size_t nextEx = exIdx + 1; nextEx < m_nExercises; ++nextEx) {
@@ -351,14 +354,15 @@ void AMCEngine::computeIndicators(const size_t exIdx) {
 }
 
 void AMCEngine::setFlowExerciseIndex(AMCFlow& flow) const {
+    size_t exerciseIndex = 0;
     // Specific treatment of bullet flows so they are paid regardless of exercise events.
     if (flow.isBulletFlow()) {
-        flow.setExerciseIndex(m_nExercises + 1);
+        exerciseIndex = m_nExercises + 1;
     }
     // For flows included in the rebate, we are allocating so that exIdx(flow) = i <=> exDate[i - 1] < obs(flow) <= exDate[i]
     // This way, the flow will be allocated to the current exIdx, and paid regardless of the exercise decision.
     else if (flow.isIncludedInRebate()) {
-        const size_t exIdx = static_cast<size_t>(std::distance(
+        exerciseIndex = static_cast<size_t>(std::distance(
             m_exerciseFlows.cbegin(),
             std::lower_bound(
                 m_exerciseFlows.cbegin(), m_exerciseFlows.cend(), flow,
@@ -366,12 +370,11 @@ void AMCEngine::setFlowExerciseIndex(AMCFlow& flow) const {
                     return a.getObservationDate() < b.getObservationDate();
                 }
         )));
-        flow.setExerciseIndex(exIdx);
     }
     // For flows not included in the rebate, we are allocating so that exIdx(flow) = i + 1 <=> exDate[i] <= obs(flow) < exDate[i + 1],
     // so it is effectively paid if we did not exercise (and not paid if we exercise).
     else {
-        const size_t exIdx = static_cast<size_t>(std::distance(
+        exerciseIndex = static_cast<size_t>(std::distance(
             m_exerciseFlows.cbegin(),
             std::upper_bound(
                 m_exerciseFlows.cbegin(), m_exerciseFlows.cend(), flow,
@@ -379,39 +382,53 @@ void AMCEngine::setFlowExerciseIndex(AMCFlow& flow) const {
                     return a.getObservationDate() < b.getObservationDate();
                 }
         )));
-        flow.setExerciseIndex(exIdx);
     }
+    flow.setExerciseIndex(exerciseIndex);
 }
 
-Matrix<double> random(2500000, 361);
+Matrix<double> random(25000, 361);
 AMCEngine::AMCEngine() {
-    // Contract data
-    m_modelDate = Time{0};
-    m_nExercises = 12;
-    m_exercises.resize(m_nExercises);
-    
-    for (size_t i = 0; i < m_nExercises; ++i) {
-        auto smoothingParamsPtr = createSmoothingParameters(
-            UnderlyingType::Mono,
-            random.getNbRows(),
-            { 1000.0 },
-            { 0.03 },
-            { 0.10 },
-            { 0.80 },
-            { 1.00 },
-            -1000.0,
-            1.0,
-            BarrierType::UpBarrier,
-            m_modelDate,
-            m_modelDate + 1);
-        m_exercises[i] = std::make_shared<AMCExercise_ConditionalPutable>(smoothingParamsPtr, 0.2);
-    }
     // Engine data
     m_nPaths = random.getNbRows();
     assert(m_nPaths);
     m_polynomialDegree = 4;
     m_useCrossTerms = true;
     m_exercisableProportion = 1.0;
+
+    // Contract data
+    m_modelDate = Time{0};
+    m_nExercises = 12;
+    m_exercises.resize(m_nExercises);
+    m_exerciseFlows.resize(m_nExercises);
+    for (size_t i = 0; i < m_nExercises; ++i) {
+        m_exerciseFlows[i] =
+            AMCFlow(
+                m_nPaths, i,
+                Time(30 * (i + 1)), Time(30 * (i + 1) + 7), // Observation date and settlement date
+                true,
+                false);
+    }
+    
+    m_smoothingWidth = 0.05;
+    m_smoothingGearing = 1.0;
+    for (size_t i = 0; i < m_nExercises; ++i) {
+        auto smoothingParamsPtr = createSmoothingParameters(
+            UnderlyingType::Mono,
+            random.getNbRows(),
+            { 1000.0 }, // deltaMax
+            { 0.03 },   // epsMin
+            { 0.10 },   // epsMax
+            { 0.80 },   // Barrier
+            { 1.00 },   // FX
+            -1000.0,    // Notional
+            m_smoothingGearing,
+            BarrierType::UpBarrier,
+            m_modelDate,
+            m_exerciseFlows[i].getObservationDate());
+        double smoothingWidth = getSmoothingWidth(i);
+        m_exercises[i] = std::make_shared<AMCExercise_ConditionalPutable>(smoothingParamsPtr, smoothingWidth);
+    }
+
     // Various initializations
     m_conditionalExpectation.resize(m_nPaths, 0.0);
     m_premiumBefore.resize(m_nPaths, 0.0);
@@ -472,14 +489,8 @@ void AMCEngine::computeForward() {
     // Exercise flows = Monthly callable at 100%
     m_exerciseFlows.resize(m_nExercises);
     for (size_t i = 0; i < m_nExercises; ++i) {
-        m_exerciseFlows[i] =
-            AMCFlow(
-                m_nPaths, i,
-                Time(30 * (i + 1)), Time(30 * (i + 1) + 7), // Observation date and settlement date
-                true,
-                false);
         for (size_t j = 0; j < m_nPaths; ++j) {
-            m_exerciseFlows[i].setAmount(j, 1.00 + 0.01 * (i + 1));
+            m_exerciseFlows[i].setAmount(j, 1.00 + 0.01 * (i + 1), 0.0, 0.0);
             m_exerciseFlows[i].setDiscountFactors(j,
                 getDiscountFactor(m_exerciseFlows[i].getSettlementDate() - m_modelDate),
                 getDiscountFactor(m_exerciseFlows[i].getSettlementDate() - m_exerciseFlows[i].getObservationDate())
@@ -509,7 +520,7 @@ void AMCEngine::computeForward() {
                 false);
         setFlowExerciseIndex(m_contractFlows[i]);
         for (size_t j = 0; j < m_nPaths; ++j) {
-            m_contractFlows[i].setAmount(j, getPerformance(j, m_contractFlows[i].getObservationDate()) >= 1.0 ? 0.004 : 0.0);
+            m_contractFlows[i].setAmount(j, getPerformance(j, m_contractFlows[i].getObservationDate()) >= 1.0 ? 0.004 : 0.0, 0.0, 0.0);
             m_contractFlows[i].setDiscountFactors(j,
                 getDiscountFactor(m_contractFlows[i].getSettlementDate() - m_modelDate),
                 getDiscountFactor(m_contractFlows[i].getSettlementDate() - m_contractFlows[i].getObservationDate())
@@ -527,7 +538,7 @@ void AMCEngine::computeForward() {
     setFlowExerciseIndex(m_contractFlows[i]);
     for (size_t j = 0; j < m_nPaths; ++j) {
         const double perf = getPerformance(j, m_contractFlows[i].getObservationDate());
-        m_contractFlows[i].setAmount(j, perf >= 0.6 ? (perf >= 1.0 ? perf : 1.0) : perf);
+        m_contractFlows[i].setAmount(j, perf >= 0.6 ? (perf >= 1.0 ? perf : 1.0) : perf, 0.0, 0.0);
         m_contractFlows[i].setDiscountFactors(j,
             getDiscountFactor(m_contractFlows[i].getSettlementDate() - m_modelDate),
             getDiscountFactor(m_contractFlows[i].getSettlementDate() - m_contractFlows[i].getObservationDate())
@@ -547,9 +558,6 @@ void AMCEngine::computeForward() {
 }
 
 void AMCEngine::computeBackward() {
-    /*std::ofstream header(".\\debug.csv", std::ios_base::out);
-    header << "ExIdx,Perf,CV,ED,PremiumBefore,PremiumAfter,Rebate,CVBeforeReg," << std::endl;
-    header.close();*/
     // The backward loop.
     size_t exIdx = m_nExercises - 1;
     while (exIdx < m_nExercises && m_exerciseFlows[exIdx].getObservationDate() >= m_modelDate) {
@@ -567,23 +575,6 @@ void AMCEngine::computeBackward() {
         m_exercises[exIdx]->computeExercise(m_exerciseDecision, m_conditionalExpectation, m_performances[exIdx]);
         // Update premiumAfter = exDecision * m_exerciseFlows (= rebate premium) + (1 - exDecision) * premiumBefore (= continuation premium)  
         computePremiumAfterExercise(exIdx);
-        /*std::vector<double> gain(m_nPaths);
-        for (size_t j = 0; j < m_nPaths; ++j) {
-            gain[j] = m_premiumBefore[j] - (m_exerciseFlows[exIdx].getAmount(j) * m_exerciseFlows[exIdx].getDFObsToSettleDate(j));
-        }
-        std::ofstream line(".\\debug.csv", std::ios_base::app);
-        for (size_t i = 0; i < m_nPaths; ++i) {
-            line << exIdx
-                 << "," << m_performances[exIdx][i][0] << "," 
-                 << m_conditionalExpectation[i] << ',' 
-                 << m_exerciseDecision[i] << ',' 
-                 << m_premiumBefore[i] << ',' 
-                 << m_premiumAfter[i] << ','
-                 << m_exerciseFlows[exIdx].getAmount(i) * m_exerciseFlows[exIdx].getDFObsToSettleDate(i) << ','
-                 << gain[i] << ','
-                 << std::endl;
-        }
-        line.close();*/
         // Update the new flows : 
         // The current exercise is geared by exDecision, the future exercises are geared by (1 - exDecision) = the alive proportion.
         // The future payoff flows are geared by (1 - exDecision), the current payoff flow is not geared (as the flow is included in the rebate)
@@ -593,5 +584,4 @@ void AMCEngine::computeBackward() {
         // Decrement the exercise index.
         exIdx--;
     }
-    std::cout << getTV(m_nPaths, m_contractFlows, m_exerciseFlows);
 }

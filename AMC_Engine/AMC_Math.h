@@ -8,8 +8,7 @@
 #define aligned_malloc  _aligned_malloc
 #define aligned_realloc _aligned_realloc
 #define aligned_free    _aligned_free
-#else // ^^^ Windows ^^^ // vvv Unix vvv //
-#endif
+#endif // ^^^ Windows ^^^
 
 template <class T>
 class Matrix {
