@@ -25,19 +25,19 @@ double AMCFlow::getDFObsToSettleDate(const size_t i) const {
 }
 
 double AMCFlow::getAmount(const size_t i) const {
-    return m_amount[i].m_amountTotal;
+    return m_amount[i];
 }
 
 void AMCFlow::setAmount(const size_t i, const double amountTotal, const double amountPhysical, const double amountShares) {
-    m_amount[i].m_amountTotal = amountTotal;
-    m_amount[i].m_amountPhysical = amountPhysical;
-    m_amount[i].m_amountShares = amountShares;
+    m_amount[i] = amountTotal;
+    m_amountPhysical[i] = amountPhysical;
+    m_amountShares[i] = amountShares;
 }
 
 void AMCFlow::scaleAmount(const size_t i, const double scale) {
-    m_amount[i].m_amountTotal *= scale;
-    m_amount[i].m_amountPhysical *= scale;
-    m_amount[i].m_amountShares *= scale;
+    m_amount[i] *= scale;
+    m_amountPhysical[i] *= scale;
+    m_amountShares[i] *= scale;
 }
 
 void AMCFlow::setDiscountFactors(const size_t i, const double dfToSettle, const double dfObsToSettle) {
@@ -78,7 +78,9 @@ AMCFlow::AMCFlow(
     m_settlementDate(settlementDate),
     m_isIncludedInRebate(isIncludedInRebate),
     m_isBulletFlow(isBulletFlow) {
-    m_amount.resize(nPaths, zeroFlow);
+    m_amount.resize(nPaths, 0.0);
+    m_amountPhysical.resize(nPaths, 0.0);
+    m_amountShares.resize(nPaths, 0.0);
     m_dfToSettle.resize(nPaths, 0.0);
     m_dfToObs.resize(nPaths, 0.0);
     m_dfObsToSettle.resize(nPaths, 0.0);

@@ -101,7 +101,9 @@ namespace {
         // We are discarding paths where the condition is not fulfilled for the smoothing width computation.
         if (smoothingWidthFactor > 0.0) {
             standardDeviation(regressedGain, exercise, mean, stdGain);
-            smoothExercise = (stdGain > 0.0);
+            if (stdGain > 0.0) [[likely]] {
+                smoothExercise = true;
+            }
         }
         if (!smoothExercise) {
             for (size_t i = 0; i < nPaths; ++i) {

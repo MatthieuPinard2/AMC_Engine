@@ -3,22 +3,14 @@
 using Time = int;
 constexpr Time nullDate = Time{ 0 };
 
-struct FlowAmount {
-    // Total Amount (Cash + Physical)
-    double m_amountTotal;
-    // Physical Amount
-    double m_amountPhysical;
-    // Number of Shares (= Physical / Spot)
-    double m_amountShares;
-};
-constexpr FlowAmount zeroFlow = { .m_amountTotal = 0.0, .m_amountPhysical = 0.0, .m_amountShares = 0.0 };
-
 class AMCFlow {
 private:
     size_t m_exerciseIndex;
     Time m_observationDate;
     Time m_settlementDate;
-    std::vector<FlowAmount> m_amount;
+    std::vector<double> m_amount;
+    std::vector<double> m_amountPhysical;
+    std::vector<double> m_amountShares;
     // Discount factor from today to the settlement date
     std::vector<double> m_dfToSettle;
     // Discount factor from today to the observation date

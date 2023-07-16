@@ -26,6 +26,7 @@ private:
     std::vector<double> m_conditionalExpectation;
     std::vector<double> m_premiumBefore;
     std::vector<double> m_premiumAfter;
+    std::vector<double> m_optimizedPremium;
     std::vector<double> m_exerciseDecision;
     std::vector<double> m_weights;
     Matrix<double> m_basis;
@@ -37,6 +38,7 @@ private:
     size_t m_nStateVariables;
     size_t m_nLinearStateVariables;
     Matrix<double> m_monomialsPerStateVariable;
+    bool m_optimizeExercise;
     // Smoothing related.
     double m_smoothingWidth;
     double m_smoothingGearing;

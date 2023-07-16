@@ -252,12 +252,20 @@ void AMCEngine::clampConditionalExpectation(const double minimumGain, const doub
 
 void AMCEngine::computeConditionalExpectation(const size_t exIdx) {
     // m_conditionalExpectation is the conditional expectation of (m_premiumBefore - rebate) as we regress on the exercise gain.
+    if (!m_optimizeExercise) {
+        for (size_t j = 0; j < m_nPaths; ++j) {
+            m_conditionalExpectation[j] = m_premiumBefore[j] - (m_exerciseFlows[exIdx].getAmount(j) * m_exerciseFlows[exIdx].getDFObsToSettleDate(j));
+        }
+    }
+    else {
+        for (size_t j = 0; j < m_nPaths; ++j) {
+            m_conditionalExpectation[j] = m_optimizedPremium[j] - (m_exerciseFlows[exIdx].getAmount(j) * m_exerciseFlows[exIdx].getDFObsToSettleDate(j));
+        }
+    }
     double minimumGain = DBL_MAX, maximumGain = -DBL_MAX;
     for (size_t j = 0; j < m_nPaths; ++j) {
-        const double gain = m_premiumBefore[j] - (m_exerciseFlows[exIdx].getAmount(j) * m_exerciseFlows[exIdx].getDFObsToSettleDate(j));
-        m_conditionalExpectation[j] = gain;
-        minimumGain = std::min(minimumGain, gain);
-        maximumGain = std::max(maximumGain, gain);
+        minimumGain = std::min(minimumGain, m_conditionalExpectation[j]);
+        maximumGain = std::max(maximumGain, m_conditionalExpectation[j]);
     }
     // Check if we need to solve the linear regression - otherwise, just take the realized value as conditional expectation.
     if (!needRegression(exIdx))
@@ -273,6 +281,21 @@ void AMCEngine::computeConditionalExpectation(const size_t exIdx) {
 }
 
 void AMCEngine::computePremiumBeforeExercise(const size_t exIdx) {
+    // We can have simultaneous callable/putable exercises,
+    // in which case we want to use the same premiumBefore for every clause.
+    const bool canOptimizeThisExercise =
+        (exIdx + 1 < m_nExercises) &&
+        (m_exerciseFlows[exIdx].getObservationDate() == m_exerciseFlows[exIdx + 1].getObservationDate()) &&
+        ((m_exercises[exIdx]->isCallable() && m_exercises[exIdx + 1]->isPutable()) ||
+         (m_exercises[exIdx]->isPutable() && m_exercises[exIdx + 1]->isCallable()));
+    // We forbid the case of more than two simultaneous clauses.
+    assert(!(canOptimizeThisExercise && m_optimizeExercise));
+    m_optimizeExercise = canOptimizeThisExercise;
+    if (m_optimizeExercise) {
+        for (size_t j = 0; j < m_nPaths; ++j) {
+            m_optimizedPremium[j] = m_premiumBefore[j];
+        }
+    }
     // The premium (before exercise) contains:
     // 1- The premium at the next exercise (exIdx + 1), discounted to the current exercise observation date.
     if (exIdx + 1 < m_nExercises) {
@@ -289,12 +312,6 @@ void AMCEngine::computePremiumBeforeExercise(const size_t exIdx) {
             }
         }
     }
-    /*if (m_exerciseFlows[exIdx].getObservationDate() == m_exerciseFlows[exIdx - 1].getObservationDate()) {
-        m_optimize = true;
-        for (size_t j = 0; j < m_nPaths; ++j) {
-            m_rhs[j] = m_premiumBefore[j];
-        }
-    }*/
 }
 
 void AMCEngine::computePremiumAfterExercise(const size_t exIdx) {
@@ -386,7 +403,7 @@ void AMCEngine::setFlowExerciseIndex(AMCFlow& flow) const {
     flow.setExerciseIndex(exerciseIndex);
 }
 
-Matrix<double> random(25000, 361);
+Matrix<double> random(2500000, 361);
 AMCEngine::AMCEngine() {
     // Engine data
     m_nPaths = random.getNbRows();
@@ -394,6 +411,7 @@ AMCEngine::AMCEngine() {
     m_polynomialDegree = 4;
     m_useCrossTerms = true;
     m_exercisableProportion = 1.0;
+    m_optimizeExercise = false;
 
     // Contract data
     m_modelDate = Time{0};
@@ -433,6 +451,7 @@ AMCEngine::AMCEngine() {
     m_conditionalExpectation.resize(m_nPaths, 0.0);
     m_premiumBefore.resize(m_nPaths, 0.0);
     m_premiumAfter.resize(m_nPaths, 0.0);
+    m_optimizedPremium.resize(m_nPaths, 0.0);
     m_exerciseDecision.resize(m_nPaths, 0.0);
     m_weights.resize(m_nPaths, 1.0);
     m_exitProbability.resize(m_nExercises, 0.0);
